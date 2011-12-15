@@ -1,4 +1,5 @@
-(ns cloauth.oauth2)
+(ns cloauth.oauth2
+  (:require [cloauth.models.db :as db]))
 
 
 ; OAuth 2 error codes - as keys
@@ -10,40 +11,67 @@
                    :redirectUriInvalid  
                    })
 
+(defprotocol ValidateRequestProtocol 
+    (validate [this]))
 
+(defn error-code [r]
+  "Get the error code from a request"
+  (-> r :errors :error_code))
 
-(defprotocol RequestProtocol
-  (validate [this])
-  (error-code [this])
-  (redirectUri-invalid? [this])
-  (error-description [this]))
+(defn error-description [r]
+  "Get the error description form a request"
+  (-> r :errors :errorDescription))
+
+(defprotocol AuthRequestProtocol
+  (redirectUri-invalid? [this]))
+  
 
 ; errors - is a map consisting of :errorcode - oauth error code 
 ; :error_description -    error_uri (optional)
 
-(defrecord Request [clientId responseType redirectUri scope state errors]
-  RequestProtocol 
-  (validate [this] 
-            (assoc this :errors {}))
-  ; return error code, or nil if there is none 
-  (error-code [this]
-               (-> this :errors :error_code))
-  ; todo - should we check this some other way?
+(defrecord AuthRequest [clientId responseType redirectUri scope state errors]
+  ValidateRequestProtocol 
+  (validate [this] (assoc this :errors {}))
+ 
+  AuthRequestProtocol
+   ; todo - should we check this some other way?
   (redirectUri-invalid? [this]
-                        (= (error-code this) :redirectUriInvalid))
-  ; get the first error? or do we con cat all the messages?
-  (error-description [this]
-                 (-> this :errors :errorDescription))
-  )
+                        (= (error-code this) :redirectUriInvalid)))
 
-(defn new-request [clientId responseType redirectUri scope state] 
+(defn new-auth-request [clientId responseType redirectUri scope state] 
   "Create a new OAuth AuthZ request. Runs validation on the request "
-  (validate (Request. clientId responseType redirectUri scope state nil)))
+  (validate (AuthRequest. clientId responseType redirectUri scope state nil)))
+
+
+(defn auth-code-request [request]
+  "Handle An authentication code request.
+   Return a param map for the response"
+  (let [t (db/new-authcode (:clientId request) (:scope request))]
+     (db/insert-token! t)
+     {:code (:token t)}))
+  
+  
+; Token Handling
+
+(defrecord TokenRequest[clientId clientSecret redirectUri  grantType  code ]
+  ValidateRequestProtocol 
+  (validate [this]
+            (assoc this :errors {})))
+
+(defn new-token-request [clientId clientSecret redirectUri grantType  code]
+  (validate (TokenRequest. clientId clientSecret redirectUri grantType  code)))
+
+(defn auth-token-request [request] 
+  "Handle an token request"
+  "This isn't right..."
+  (let [t (db/new-access-token (:clientId request) (:scope request))
+        expires-in  (- (:expires t) (System/currentTimeMillis))]
+      (println "to do - persist code" t)
+     {:access_token (:token t)
+      :token_type "Bearer"
+      :expires_in expires-in}))
 
 
 
 
-; test
-
-(def x (new-request "cle" "r" "f" "s" "x"))
 

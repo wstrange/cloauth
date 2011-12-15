@@ -16,9 +16,11 @@
   (mongo/set-connection! conn)
   (mongo/set-write-concern conn :strict)
   ;(mongo/set-write-concern mongoconfig/*mongo-config* :strict)
-  (mongo/add-index! :users [:userName :verifiedEmail] :unique true))
+  (mongo/add-index! :users [:userName :verifiedEmail] :unique true)
+  (mongo/add-index! :tokens [ :token ] :unique true)
+  (mongo/add-index! :clients [ :clientId ] :unique true))
 
-; Some user functions 
+; Some user session management
 (defn has-role? [user role]
   "Non nil if the user has role (identified by keyword)
   example (has-role user :admin)"  
@@ -36,21 +38,36 @@
   (:userName (current-user-record)))
 
 
+; Access Tokens 
+; clientId - client that token was issued to
+; userId  - Id of user that granted the token
+; scope - scope token was issued for. This is a set of permissions
+; tokenType -  (authorization code, or an access token)
+; expires  - system time in msec when token expires 
+; token- the token itself
+(defrecord Token [clientId userId scope tokenType expires token])
 
-(defrecord Client [ownerId companyName description redirectUrl clientId clientSecret ])
+(defn days-to-msec [days] 
+  (* days 1000 60 60 24))
 
+; Create a new authorization code token for the current user for the identified client 
+; Default expiry is 1 year?
+(defn new-authcode [clientId scope]
+  (Token. clientId (current-userName) scope :code (+ (System/currentTimeMillis)  (days-to-msec 365))
+          (util/gen-id 32)))
 
-(defn new-client [companyName description redirectUrl]
-  "Generate a new client record. Generates unique id and client secret
-  The client is ownned by the current user "
-  (Client. (current-userName) companyName description redirectUrl (util/gen-id 32) (util/gen-id 32)))
+(defn new-access-token [clientId scope]
+  "Create a new access token. The lifetime defaults to 1 hour"
+  (Token. clientId (current-userName) scope :acesss_token (+ (System/currentTimeMillis) (* 1000 60 60))
+          (util/gen-id 32)))
+      
+(defn insert-token! [t] 
+  (mongo/insert! :tokens t))
 
-(defn insert-client! [client]
-  "Insert a client record into the DB"
-  (mongo/insert! :clients client))
+(defn get-token-by-id [id]
+  (mongo/fetch-one :tokens :where {:token id}))
 
-; Users 
-
+; Users
 (defrecord User [userName firstName lastName verifiedEmail roles])
 
 (defn new-user [userName firstName lastName verifiedEmail roles]
@@ -80,9 +97,6 @@
       (if  (:registrationComplete u)
         (session/put! :user u)
         false)))
-
-    
-
 
 (defn logged-in? []
   "Not nil if the user is logged in"
@@ -121,4 +135,20 @@
   (mongo/destroy! :users query))
 
 
+;; Client - An OAuth 2 client 
+                          
+(defrecord Client [ownerId companyName description redirectUri clientId clientSecret ])
+
+(defn new-client [companyName description redirectUri]
+  "Generate a new client record. Generates unique id and client secret
+  The client is ownned by the current user "
+  (Client. (current-userName) companyName description redirectUri (util/gen-id 32) (util/gen-id 32)))
+
+(defn insert-client! [client]
+  "Insert a client record into the DB"
+  (mongo/insert! :clients client))
+
+(defn get-client-by-clientId [clientId] 
+  (mongo/fetch-one :clients :where {:clientId clientId}))
+ 
 

@@ -81,7 +81,7 @@
 
 ; Layout with an include map for optional css / js
 (defpartial layout-with-includes [ {:keys [css js]} & content]
-  (prn "option map " css js "content " content)
+  ;(prn "option map " css js "content " content)
   (html 
         (header)
             [:body

@@ -1,0 +1,8 @@
+
+
+Auth Filters:
+    Figure out how to implement filters for authentication
+    
+    - Public
+    - User based  - session 
+    - client id/ secret 

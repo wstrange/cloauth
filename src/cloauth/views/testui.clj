@@ -2,7 +2,7 @@
   (:require [cloauth.models.db :as db] 
             [cloauth.views.common :as common]
             [noir.response :as resp]
-               [clj-http.client :as client])
+            [clj-http.client :as http])
    (:use noir.core
         hiccup.core
         hiccup.page-helpers
@@ -44,23 +44,55 @@
 (defpage "/test/sampledata" []
   (resp/redirect "/"))
 
+(defn- mk-url [path]
+  (str "http://localhost:8080" path))
+
 ;; testing code 
-(defn call-auth [] 
-  (client/get "http://localhost:8080/oauth2/auth/"))
 
-(defn call2 [] 
-  (client/request {:method :get :url  "http://localhost:8080/oauth2/auth"}))
+(def test-client-id "wj6F0pX70z3ZgN1skf7m6COjaeFXL3kG" )
 
-
-  
 ; Pretend to be a client making an oauth request 
 (defpage "/test/authorize" []
   (common/layout 
     [:p  "Test Authorize "]
     (link-to (str "/oauth2/authorize?"
-                  (encode-params {:client_id "wj6F0pX70z3ZgN1skf7m6COjaeFXL3kG" 
-                                  :response_type "code"}))
+                  (encode-params {:client_id test-client-id
+                                  :redirect_uri "/test/redirect"
+                                  :response_type "code"
+                                  :state "teststate"
+                                  :scope "test"}))
              "Authorize")))
 
 
+(defpage "/test/redirect" {:keys [code] :as req} 
+  (common/layout 
+    [:h2 "Redirect test page" ]
+    (if code 
+      [:div 
+       [:p "Use code to get an access token"]
+       [:p (link-to (str "/test/get-token?code=" code) "Get Access Token")]]
+       ; else
+       [:p "There was an error " (:error req)])))
+
+(defpage "/test/get-token" {:keys [code]}
+  (let [client (db/get-client-by-clientId test-client-id)
+        params {:code  code 
+                :grant_type "authorization_code"
+                :client_id  (:clientId client)
+                :client_secret (:clientSecret client)
+                :redirect_uri (:redirectUri client)}
+        
+        result (http/post (mk-url "/client/token" )
+                          {:params params  :content-type :json})
+        foo (prn result)]
+    (common/layout 
+      [:h1 "Access Token Result"]
+      (if (= (:status result) 200)
+        [:p   (:body result) ]
+        ; else
+        [:p "There was an error. " (prn result)]))))
+
+
+    
+  
   

@@ -25,7 +25,7 @@ See http://code.google.com/apis/identitytoolkit/v1/acguide.html
 ;; TODO: 
 
 ; Any URI route that starts with this java regex pattern is public
-(def public-uris #"/(favicon|css|js|authn|test|login).*")
+(def public-uris #"/(favicon|css|js|authn|test|login|client).*")
 
 (defn protected-uri? [uri] 
   " not nil if this uri is protected" 
