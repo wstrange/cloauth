@@ -76,15 +76,19 @@
 
 (defpage "/test/get-token" {:keys [code]}
   (let [client (db/get-client-by-clientId test-client-id)
+      
+        id (:clientId client)
+        secret (:clientSecret client)
         params {:code  code 
                 :grant_type "authorization_code"
-                :client_id  (:clientId client)
-                :client_secret (:clientSecret client)
+                :client_id  id
+                :client_secret secret
                 :redirect_uri (:redirectUri client)}
-        
         result (http/post (mk-url "/client/token" )
-                          {:params params  :content-type :json})
-        foo (prn result)]
+                          {:form-params params  
+                           :content-type :json
+                           :basic-auth [id secret]})
+        ]
     (common/layout 
       [:h1 "Access Token Result"]
       (if (= (:status result) 200)

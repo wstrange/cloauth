@@ -98,15 +98,21 @@
       (throw (Exception. "Unknown response type. This should have been caught by verify function")))))
 
 
+; Todo - add client aut filter
+(comment
+(pre-route [:any "/client/token"]  {:as req} 
+           (println "/client req " req  "\nparams " (:params req))))
+
 ; Token Endpoint 
 ; 
 
 ; Note /client uri - so we can use client authentication instead of user auth
 ; todo: We need a better system...
 ; todo: Client auth should be enforced here...
-(defpage [:any "/client/token"]  {:keys [client_id client_secret redirect_uri grant_type code] :as request} 
-  (println "Token Request " client_id )
+(defpage [:any "/client/token"]  {:keys [client_id client_secret redirect_uri grant_type code] :as req} 
+  ;(println "Token Request " (:params req))
   (let [request (oauth/new-token-request client_id client_secret redirect_uri grant_type code)]
+    ;(println "Create req" request)
     (resp/json (oauth/auth-token-request request))))
  
 

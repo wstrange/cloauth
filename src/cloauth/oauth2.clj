@@ -3,6 +3,7 @@
 
 
 ; OAuth 2 error codes - as keys
+(comment "do we need???"
 (def error-codes #{ :access_denied :invalid_request :unauthorized_client 
                    :unsupported_response_type :invalid_scope
                    :server_error :temporarily_unavailable
@@ -10,18 +11,24 @@
                    ; we use it as a marker 
                    :redirectUriInvalid  
                    })
+)
+
 
 (defprotocol ValidateRequestProtocol 
     (validate [this]))
 
 (defn error-code [r]
   "Get the error code from a request"
-  (-> r :errors :error_code))
+  (-> r :errors :error))
+
+(defn has-error? [r] 
+  (error-code r))
 
 (defn error-description [r]
-  "Get the error description form a request"
+  "Get the error description from a request"
   (-> r :errors :errorDescription))
 
+  
 (defprotocol AuthRequestProtocol
   (redirectUri-invalid? [this]))
   
@@ -50,28 +57,51 @@
      (db/insert-token! t)
      {:code (:token t)}))
   
-  
+ 
+; should be in db?
+(defn valid-client? [id secret]
+  "Check to see that client has a valid id and secret"
+  (if-let [client  (db/get-client-by-clientId id)]
+    (= secret (:clientSecret client))))
+
+(defn- check-client [id secret]
+ "check the client - and set the error map "
+  (if-let [e (valid-client? id secret)]
+    {} 
+    ; else - error
+    {:error :unauthorized_client
+     :error_description "Client is not authorized"}))
+
 ; Token Handling
 
 (defrecord TokenRequest[clientId clientSecret redirectUri  grantType  code ]
   ValidateRequestProtocol 
   (validate [this]
-            (assoc this :errors {})))
+            (assoc this :errors 
+              (check-client clientId clientSecret))))
 
 (defn new-token-request [clientId clientSecret redirectUri grantType  code]
   (validate (TokenRequest. clientId clientSecret redirectUri grantType  code)))
 
+(defn- msec-to-sec [msec] 
+  "Convert msec to seconds"
+  (int (/ msec 1000)))
+  
+(defn- expiry [absolute-msec]
+  "Given an absolute time in the future (msec) calculate 
+   the remain time in seconds"
+  (msec-to-sec (- absolute-msec (System/currentTimeMillis) )))
+
+
 (defn auth-token-request [request] 
-  "Handle an token request"
-  "This isn't right..."
-  (let [t (db/new-access-token (:clientId request) (:scope request))
-        expires-in  (- (:expires t) (System/currentTimeMillis))]
+  "Handle an token request. Return a map that will be converted into JSON
+   "
+  (if (has-error? request)
+    (:errors request) ; will return map with error_code set 
+    ; else
+    (let [t (db/new-access-token (:clientId request) (:scope request))]
       (println "to do - persist code" t)
      {:access_token (:token t)
       :token_type "Bearer"
-      :expires_in expires-in}))
-
-
-
-
+      :expires_in (expiry (:expires t))})))
 
