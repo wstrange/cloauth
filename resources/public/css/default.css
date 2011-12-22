@@ -15,10 +15,14 @@ textarea { background:#3a3b3b; border:2px solid #4a4b4b; border-radius:8px; padd
 input {background:#3a3b3b; border:2px solid #4a4b4b; border-radius:2px; padding:2px;  color:#babbbb; font-size:10px; }
 label {float:right; display:inline; padding:2px;  font-size:10px; text-align: right; vertical-align:middle}
 
-
+/*
 input + input { margin-top:10px; }
 input + textarea { margin-top:10px; }
+*/
 
+/* Navigation lists - no bullets */
+li.navlist { list-style: none; }
+/* li.foolist  {list-style: circle outside; color:green;} */
 
 #wrapper {width:800px; margin: 0 auto; padding-top:50px; }
 #wrapper > div.content { float:left; display:inline; padding-bottom:100px; }

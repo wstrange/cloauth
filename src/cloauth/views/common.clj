@@ -29,25 +29,30 @@
              ])
 
 (def admin-links [{:url "/admin" :text "Admin/Main"}
-                  {:url "/admin/users" :text "Add Users"}
                   {:url "/test" :text "Test Page"}
                 ])
 
-(def client-links [{:url "/client/register" :text "Register Client"}])
+(def client-links [{:url "/client/register" :text "Register Client"}
+                    {:url "/client/admin" :text "Manage Clients"}])
 
-(def main-links [{:url "/admin" :text "Admin"}])
-(def all-links (flatten [admin-links client-links]))
+(def main-links [{:url "/oauth2/user/tokens" :text "Authorized Applications" }])
 
+(def all-links (flatten [main-links admin-links client-links]))
 
+; todo set default class for link items?
 (defpartial link-item [{:keys [url cls text]}]
-            [:li
-             (link-to {:class cls} url text)])
+            [:li.navlist (link-to  url text)])
 
 ; Navigation Side bar
 (defpartial nav-content []
   [:div.nav 
    [:h2 "Links"]
-   [:ul.nav (map #(link-item %) all-links)]
+   [:h3 "Admin"]
+   [:ul.nav (map #(link-item %) admin-links)]
+   [:h3 "Client"]
+   [:ul.nav (map #(link-item %) client-links)]
+   [:h3 "My Apps"]
+   [:ul.nav (map #(link-item %) main-links)]
    ])
 
 ;; Display the logged in user name or a login link
@@ -87,8 +92,8 @@
             [:body
               [:div.container.showgrid             ; change showgridx to showgrid to show blueprint grid
                 (header-content)  ; 24 col wide header
-                [:div.span-4 (nav-content)]          ; Nav bar that is 4 cols wide
-                [:div.span-20.last content ]         ; 20 cols for content
+                [:div.span-5 (nav-content)]          ; Nav bar that is 4 cols wide
+                [:div.span-19.last content ]         ;  cols for content
                 [:p.span-24 " "]   ; space 
                 [:hr]
                 [:div {:class "clear prepend-8 last"}  "Copyright (c) 2011 Warren Strange"] ; footer

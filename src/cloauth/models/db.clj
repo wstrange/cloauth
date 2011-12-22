@@ -56,9 +56,10 @@
   (Token. clientId (current-userName) scope :code (+ (System/currentTimeMillis)  (days-to-msec 365))
           (util/gen-id 32)))
 
-(defn new-access-token [clientId scope]
-  "Create a new access token. The lifetime defaults to 1 hour"
-  (Token. clientId (current-userName) scope :acesss_token (+ (System/currentTimeMillis) (* 1000 60 60))
+(defn new-access-token [clientId userId scope]
+  "Create a new access token. The lifetime defaults to 1 hour - 1 minute for testing"
+  (prn "Create token for " clientId  "userid " userId)
+  (Token. clientId userId scope :access_token (+ (System/currentTimeMillis) (* 1000 60 ))
           (util/gen-id 32)))
       
 (defn insert-token! [t] 
@@ -67,6 +68,19 @@
 (defn get-token-by-id [id]
   (mongo/fetch-one :tokens :where {:token id}))
 
+(defn get-token [query] 
+  "Return the tokens associated with query " 
+  (prn "Fetch " query)
+  (mongo/fetch :tokens :where query))
+
+(defn get-user-auth-codes []
+  "Return a seq of the Authorization codes granted by this user"
+  (get-token {:userId (current-userName) :tokenType :code}))
+
+(defn delete-token! [tokenId]
+  (println "Delete Token id=" tokenId)
+  (mongo/destroy! :tokens {:token tokenId}))
+                           
 ; Users
 (defrecord User [userName firstName lastName verifiedEmail roles])
 
@@ -151,4 +165,28 @@
 (defn get-client-by-clientId [clientId] 
   (mongo/fetch-one :clients :where {:clientId clientId}))
  
+(defn query-client [query] 
+  (mongo/fetch :clients :where query))
 
+; Tasks to maintain the token db
+
+(defn purge-expired-tokens []
+  (doseq [t
+        (get-token {:expires {:$lt (java.lang.System/currentTimeMillis)}})]
+      (delete-token! (:token t))))
+ 
+(defn delete-client! [query]
+    (mongo/destroy! :clients  query))
+
+(comment
+  "we dont need this right now..."
+  
+(def purge-task (future 
+                  (loop [] (do 
+                          (println "Expiring Tokens")
+                          (purge-expired-tokens)
+                          (println "Sleeping...")
+                          (Thread/sleep 900000))
+                    (recur ))))
+)
+                          

@@ -108,11 +108,11 @@
 
 ; Note /client uri - so we can use client authentication instead of user auth
 ; todo: We need a better system...
-; todo: Client auth should be enforced here...
+; todo: Client auth should be enforced here... 
+; todo: Need to look up the user
 (defpage [:any "/client/token"]  {:keys [client_id client_secret redirect_uri grant_type code] :as req} 
   ;(println "Token Request " (:params req))
   (let [request (oauth/new-token-request client_id client_secret redirect_uri grant_type code)]
-    ;(println "Create req" request)
     (resp/json (oauth/auth-token-request request))))
  
 
@@ -120,5 +120,37 @@
   (common/layout 
     [:h1 "Error Procesing OAuth request"]
     [:p "An unrecoverable error has occured"]
-    [:p "Error Message:" error]
+    [:p "Error Message:" error]))
+
+; Display an auth token 
+(defpartial display-token [token]
+  (let [clientId (:clientId token)
+        client (db/get-client-by-clientId clientId)]
+    [:div
+      [:p "Company " (:companyName client)]
+      [:p "Scope of Access: " (:scope token)]
+      [:p (link-to (str "/oauth2/user/revoke?token=" (:token token)) "Revoke Access")]
+    ]))
+
+(defpartial auth-tokens [] 
+  (map #(display-token %) (db/get-user-auth-codes)))
+
+
+
+; User page to review OAuth2 Grants 
+(defpage "/oauth2/user/tokens" [] 
+  (common/layout 
+    [:h1 "Authorized Applications "]
+    [:p "The following applications are authorized to access your data"]
+    [:p (auth-tokens)]
     ))
+  
+; Revoke a granted user token
+; todo; Check if user OWNS the token!
+(defpage "/oauth2/user/revoke" {:keys [token]} 
+  (println "Delete token id=" token)
+  (db/delete-token! token)
+  (resp/redirect "/oauth2/user/tokens"))
+
+
+  

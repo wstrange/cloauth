@@ -6,7 +6,8 @@
    (:use noir.core
         hiccup.core
         hiccup.page-helpers
-        hiccup.form-helpers))
+        hiccup.form-helpers
+        clojure.data.json))
 
 
 ;; Create a test user 
@@ -51,7 +52,7 @@
 
 (def test-client-id "wj6F0pX70z3ZgN1skf7m6COjaeFXL3kG" )
 
-; Pretend to be a client making an oauth request 
+; Pretend to be a client making an oauth Authorization request 
 (defpage "/test/authorize" []
   (common/layout 
     [:p  "Test Authorize "]
@@ -64,6 +65,7 @@
              "Authorize")))
 
 
+; Rediret URL for testing purposes
 (defpage "/test/redirect" {:keys [code] :as req} 
   (common/layout 
     [:h2 "Redirect test page" ]
@@ -74,9 +76,9 @@
        ; else
        [:p "There was an error " (:error req)])))
 
+; Show the result of exchanging a auth code for a token
 (defpage "/test/get-token" {:keys [code]}
   (let [client (db/get-client-by-clientId test-client-id)
-      
         id (:clientId client)
         secret (:clientSecret client)
         params {:code  code 
@@ -87,16 +89,21 @@
         result (http/post (mk-url "/client/token" )
                           {:form-params params  
                            :content-type :json
-                           :basic-auth [id secret]})
-        ]
+                           :basic-auth [id secret]})]
     (common/layout 
       [:h1 "Access Token Result"]
       (if (= (:status result) 200)
-        [:p   (:body result) ]
+        (let  [body (:body result) 
+               json (read-json body)
+               token (:access_token json)]
+        [:div 
+          [:p"Retrieved token: " json ]
+          [:p (link-to (str "/test/resource?access_token=" token ) "Make a Test Request")]])
         ; else
         [:p "There was an error. " (prn result)]))))
 
-
-    
-  
+ 
+(defpage "/test/resource" {:keys [access_token]} 
+  (common/layout
+    [:p "Test Access for " access_token ]))
   

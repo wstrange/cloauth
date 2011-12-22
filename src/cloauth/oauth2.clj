@@ -38,7 +38,7 @@
 
 (defrecord AuthRequest [clientId responseType redirectUri scope state errors]
   ValidateRequestProtocol 
-  (validate [this] (assoc this :errors {}))
+  (validate [this] (assoc this :errors {})) ; todo: TBD
  
   AuthRequestProtocol
    ; todo - should we check this some other way?
@@ -81,27 +81,36 @@
               (check-client clientId clientSecret))))
 
 (defn new-token-request [clientId clientSecret redirectUri grantType  code]
+  "Create a new validated token request
+   If the token is not valid the :errors map will be set"
   (validate (TokenRequest. clientId clientSecret redirectUri grantType  code)))
 
 (defn- msec-to-sec [msec] 
   "Convert msec to seconds"
   (int (/ msec 1000)))
   
-(defn- expiry [absolute-msec]
-  "Given an absolute time in the future (msec) calculate 
+(defn- expiry [future-msec]
+  "Given a time in the future (msec) calculate 
    the remain time in seconds"
-  (msec-to-sec (- absolute-msec (System/currentTimeMillis) )))
+  (msec-to-sec (- future-msec (System/currentTimeMillis) )))
 
 
+; todo: Have to look up the user id
 (defn auth-token-request [request] 
-  "Handle an token request. Return a map that will be converted into JSON
+  "Handle an token request. Return a map that will be converted into JSON response
+   request - Token request
    "
+  (prn "Token request " request)
   (if (has-error? request)
     (:errors request) ; will return map with error_code set 
     ; else
-    (let [t (db/new-access-token (:clientId request) (:scope request))]
-      (println "to do - persist code" t)
+    (let [clientId (:clientId request)
+          code (:code request)
+          codeToken (db/get-token-by-id code)        
+          userId (:userId codeToken)
+          scope (:scope codeToken)
+          t (db/new-access-token clientId userId scope)]
+     (db/insert-token! t)
      {:access_token (:token t)
       :token_type "Bearer"
       :expires_in (expiry (:expires t))})))
-
