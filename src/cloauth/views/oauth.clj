@@ -126,21 +126,28 @@
 (defpartial display-token [token]
   (let [clientId (:clientId token)
         client (db/get-client-by-clientId clientId)]
-    [:div
-      [:p "Company " (:companyName client)]
-      [:p "Scope of Access: " (:scope token)]
-      [:p (link-to (str "/oauth2/user/revoke?token=" (:token token)) "Revoke Access")]
+    [:tr
+      [:td  (:companyName client)]
+      [:td (:scope token)]
+      [:td (:description client)]
+      [:td (link-to (str "/oauth2/user/revoke?token=" (:token token)) "Revoke Access")]
     ]))
 
 (defpartial auth-tokens [] 
-  (map #(display-token %) (db/get-user-auth-codes)))
+  [:table 
+    [:tr 
+    [:th  {:width "10%"} "Company"]
+    [:th  {:width "20%"} "Scope"]
+    [:th {:width "40%"} "Description"]
+    [:th {:width "30%"} "Action"]]
+  (map #(display-token %) (db/get-user-auth-codes))])
 
 
 
 ; User page to review OAuth2 Grants 
 (defpage "/oauth2/user/tokens" [] 
   (common/layout 
-    [:h1 "Authorized Applications "]
+    [:h4 "Authorized Applications "]
     [:p "The following applications are authorized to access your data"]
     [:p (auth-tokens)]
     ))

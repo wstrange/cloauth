@@ -11,10 +11,8 @@
                :jquery-ui (include-js "https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.2/jquery-ui.min.js")
                :jquery-local (include-js "js/jquery-1.6.2.min.js")
                :jquery-ui-local (include-js "js/jquery-ui-1.8.16.custom.min.js")
-               :blueprint (include-css "/css/blueprint/screen.css")
-               :default (include-css "/css/default.css")
-               :reset (include-css "/css/reset.css")
-               :util.js (include-js "/js/util.js")
+               :bootstrap (include-css "/css/bootstrap.css")
+             
                :google-apis (include-js "https://ajax.googleapis.com/ajax/libs/googleapis/0.0.4/googleapis.min.js")
                :jsapi (include-js "https://ajax.googleapis.com/jsapi")
               })
@@ -23,9 +21,12 @@
 
 (defpartial build-head [incls scripts]
             [:head
+             [:meta {:charset "utf-8"}]
              [:title "Cloauth"]
              (map #(get includes %) incls)
              (map #(get gitkit/javascripts %) scripts) 
+             ;[:style {:type "text/css"}  "body { padding-top: 60px;}  input { box-sizing: content-box;}"]
+              [:style {:type "text/css"}  "body { padding-top: 60px;}  "]
              ])
 
 (def admin-links [{:url "/admin" :text "Admin/Main"}
@@ -41,42 +42,45 @@
 
 ; todo set default class for link items?
 (defpartial link-item [{:keys [url cls text]}]
-            [:li.navlist (link-to  url text)])
+            [:li (link-to url text)])
 
 ; Navigation Side bar
 (defpartial nav-content []
-  [:div.nav 
+  [:div.sidebar
+   [:div.well
    [:h2 "Links"]
-   [:h3 "Admin"]
-   [:ul.nav (map #(link-item %) admin-links)]
-   [:h3 "Client"]
-   [:ul.nav (map #(link-item %) client-links)]
-   [:h3 "My Apps"]
-   [:ul.nav (map #(link-item %) main-links)]
-   ])
+   [:h5 "Admin"]
+   [:ul (map #(link-item %) admin-links)]
+   [:h5 "Client"]
+   [:ul (map #(link-item %) client-links)]
+   [:h5 "My Apps"]
+   [:ul (map #(link-item %) main-links)]]])
 
 ;; Display the logged in user name or a login link
 ; The chooser div will get a GIT Sign in Button inserted via Javascript
 (defpartial logged-in-status [] 
   (let [u (db/current-userName)]
   (if u  ; If user logged in?
-    [:div u " - " (link-to "/authn/logout" "Logout")]
+    [:span (link-to "/profile" u) " -" (link-to "/authn/logout" "Logout")]
     [:div#chooser "Login"])))
 
-; Top master header
-(defpartial header-content []
-       [:div.header 
-         [:br]
-         [:h2.span-10  (link-to "/" "CloAuth")]
-         [:p.span-8.last {:align "right"}(logged-in-status)]
-         [:hr]
-         ])
+; Top mast header
+(defpartial topmast-content []
+       [:div.topbar 
+         [:div.topbar-inner
+          [:div.container-fluid
+           [:a.brand {:href "/"} "CloAuth"]
+           [:ul.nav
+            [:li.active (link-to "/" "Home")]
+            [:li (link-to "/about" "About")]
+           ]
+           [:p.pull-right (logged-in-status)]]]])
 
   
 (defn header []
   (if (db/logged-in?)
-    (build-head [:blueprint :jquery :util.js :jquery-ui :default] [] )
-    (build-head [:blueprint :jquery :util.js :jquery-ui :jsapi :google-apis] [:git-load :git-init])))
+    (build-head [:bootstrap :jquery :jquery-ui ] [] )
+    (build-head [:bootstrap :jquery :jquery-ui :jsapi :google-apis] [:git-load :git-init])))
 
 ;; Layouts
 
@@ -87,18 +91,18 @@
 ; Layout with an include map for optional css / js
 (defpartial layout-with-includes [ {:keys [css js]} & content]
   ;(prn "option map " css js "content " content)
-  (html 
+  (html5 {:lang "en"}
         (header)
             [:body
-              [:div.container.showgrid             ; change showgridx to showgrid to show blueprint grid
-                (header-content)  ; 24 col wide header
-                [:div.span-5 (nav-content)]          ; Nav bar that is 4 cols wide
-                [:div.span-19.last content ]         ;  cols for content
-                [:p.span-24 " "]   ; space 
-                [:hr]
-                [:div {:class "clear prepend-8 last"}  "Copyright (c) 2011 Warren Strange"] ; footer
-              ]
-            ]))
+             (topmast-content)
+              [:div.container-fluid 
+               (nav-content)
+               [:p]
+               [:p]
+              [:div.content 
+               [:div.hero-unit content ]       
+              
+               [:footer  [:p "Copyright (c) 2011 Warren Strange"]]]]]))
 
 ; Standard layout - no additional javascript or css
 (defpartial layout [& content]

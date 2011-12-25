@@ -10,27 +10,31 @@
 
 
 (defn- mktext [keyval text] 
-  [:div.formtext 
-   (label {:class "span-3" } keyval text) 
-   (text-field {:class "span-4.last" :size 40} keyval text)
-   [:br]])
+  [:div.clearfix
+    (label keyval text) 
+   [:div.input  
+   (text-field {:class "large" :size "40" } keyval text)]])
  
 ; todo - move these to util
 (defpartial simple-post-form [url form-map]
   (form-to [:post url] 
-           (map #(mktext (key %) (val %)) form-map)
-           [:br]
-           [:button "Submit"]))
+           [:fieldset
+           
+             (map #(mktext (key %) (val %)) form-map)
+           [:div.actions
+            [:button.btn.primary "Submit"]
+            [:button.btn {:type "reset"} "Cancel"]]]))
 
 ;; Client registration 
 
 (defpage "/client/register"  {:as req}
   (common/layout 
-    [:p "Register New Client" ]
-    (simple-post-form "/client/register" 
+      [:p "Register New Client" ]
+     [:div
+      (simple-post-form "/client/register" 
                       {:companyName "Company Name"
-                       :description "Descripition"
-                      :redirectUrl "Redirect URL"})))
+                       :description "Description"
+                       :redirectUrl "Redirect URL"})]))
 
 
 (defpage [:post "/client/register"]  {:keys [companyName description redirectUrl] :as form}
