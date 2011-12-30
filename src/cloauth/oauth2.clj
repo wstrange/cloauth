@@ -10,8 +10,7 @@
                    ; this is not part of OAuth error code spec.
                    ; we use it as a marker 
                    :redirectUriInvalid  
-                   })
-)
+                   }))
 
 
 (defprotocol ValidateRequestProtocol 
@@ -65,22 +64,43 @@
     (= secret (:clientSecret client))))
 
 (defn- check-client [id secret]
- "check the client - and set the error map "
-  (if-let [e (valid-client? id secret)]
-    {} 
-    ; else - error
+ "check the client id and secret match"
+  (if-not (valid-client? id secret)
     {:error :unauthorized_client
      :error_description "Client is not authorized"}))
 
+(defn- check-grantType [grantType] 
+  (if (not= grantType "authorization_code") 
+    {:error :invalidrequest
+     :error_description "Grant type must be authorization_code"}))
+
+(defn- check-authCode [clientId code]
+  "Check that the auth code for the request is in fact valid "
+  (let [t (db/get-token-by-id code)]
+    (if (or 
+          ; there is no auth code in the db
+          (nil? t)  
+          ; there is one, but the clientId does not match
+          (not= clientId  (:clientId t))
+          ; what else to check?
+          )
+          {:error :unauthorized_client
+           :error_description "ClientId or code is  invalid"})))             
+    
 ; Token Handling
+
 
 (defrecord TokenRequest[clientId clientSecret redirectUri  grantType  code ]
   ValidateRequestProtocol 
   (validate [this]
             (assoc this :errors 
-              (check-client clientId clientSecret))))
+              (merge   ; todo: should we return multiple errors?
+                (check-client clientId clientSecret)
+                (check-grantType grantType)
+                (check-authCode clientId code )))))
 
-(defn new-token-request [clientId clientSecret redirectUri grantType  code]
+
+(defn new-token-request [clientId clientSecret redirectUri grantType code]
   "Create a new validated token request
    If the token is not valid the :errors map will be set"
   (validate (TokenRequest. clientId clientSecret redirectUri grantType  code)))

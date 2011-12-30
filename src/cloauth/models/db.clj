@@ -70,7 +70,6 @@
 
 (defn get-token [query] 
   "Return the tokens associated with query " 
-  (prn "Fetch " query)
   (mongo/fetch :tokens :where query))
 
 (defn get-user-auth-codes []
@@ -179,14 +178,12 @@
     (mongo/destroy! :clients  query))
 
 (comment
-  "we dont need this right now..."
+  "we dont need this right now...")
   
 (def purge-task (future 
                   (loop [] (do 
-                          (println "Expiring Tokens")
                           (purge-expired-tokens)
-                          (println "Sleeping...")
-                          (Thread/sleep 900000))
+                          (println "Expire token thread sleeping...." (.getName (Thread/currentThread)))
+                          (Thread/sleep 90000))
                     (recur ))))
-)
-                          
+                       

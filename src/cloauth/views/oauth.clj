@@ -80,25 +80,35 @@
       [:p (link-to "/oauth2/consent/decide?d=deny" "Deny Request" )]
       )))
 
+
+(defn- request-granted [request] 
+  "The user has granted the request "
+  (if (= (:responseType request) "token")
+     ; token type - 2 legged oauth
+     (resp/json "token")  ; todo:
+     ; else
+     (send-redirect request (oauth/auth-code-request request))))
+    
+(defn- request-denied [request] 
+  (if (= (:responseType request) "token")
+    ; token type - send json back 
+    (resp/json {:error "access_denied" })
+    (send-redirect request {:error "access_denied" })))
+
 (defpage "/oauth2/consent/decide" {:keys [d] } 
   (if-let [request (session/flash-get)] 
     (if (= d "grant")
-      (send-redirect request (oauth/auth-code-request request))
-      (send-redirect request {:error "access_denied" }))
+      (request-granted request)
+      ; else
+      (request-denied request))
+    ; else - if there is no request the session - bad request
     (common/layout 
       [:h1 "Error"]
       [:p "Bad Request. Please Retry "])))
  
-    
-(comment 
-  (send-redirect request 
-     (case (:responseType request)
-      "code"  (oauth/auth-code-request request)
-      "token" (oauth/auth-token-request request)
-      (throw (Exception. "Unknown response type. This should have been caught by verify function")))))
+; Todo - add client auth filter
 
-
-; Todo - add client aut filter
+; use this for debug..
 (comment
 (pre-route [:any "/client/token"]  {:as req} 
            (println "/client req " req  "\nparams " (:params req))))
@@ -115,6 +125,7 @@
   (let [request (oauth/new-token-request client_id client_secret redirect_uri grant_type code)]
     (resp/json (oauth/auth-token-request request))))
  
+
 
 (defpage "/oauth2/error" {:keys [error]  :as request}
   (common/layout 
@@ -133,6 +144,9 @@
       [:td (link-to (str "/oauth2/user/revoke?token=" (:token token)) "Revoke Access")]
     ]))
 
+
+;;; User Token Management
+; Show the users auth codes
 (defpartial auth-tokens [] 
   [:table 
     [:tr 
@@ -141,7 +155,6 @@
     [:th {:width "40%"} "Description"]
     [:th {:width "30%"} "Action"]]
   (map #(display-token %) (db/get-user-auth-codes))])
-
 
 
 ; User page to review OAuth2 Grants 

@@ -16,6 +16,11 @@
 
 (def testuser1 (db/new-user "test1" "test" "tester1" "test1@test.com" '(:user :admin)))
 
+
+(def test-client-id "wj6F0pX70z3ZgN1skf7m6COjaeFXL3kG" )
+
+
+
 (defn create-test-user [] 
   (if (db/get-user "test1")
     (println "test user exists")
@@ -25,16 +30,29 @@
 
 (create-test-user)
 
+; Test page
 (defpage "/test" []
   (common/layout 
-    [:h1 "Test Links"]
-    [:p   
-     
-     (link-to "/test/login" "Login Test User")
+    [:h4 "Test Links"]
+    [:p  
+     (link-to "/test/login" "Login as Test User")
      [:br]
-     (link-to "/test/authorize" "Test OAuth Authorize")
+     (link-to (str "/oauth2/authorize?"
+                  (encode-params {:client_id test-client-id
+                                  :redirect_uri "/test/redirect"
+                                  :response_type "code"
+                                  :state "teststate"
+                                  :scope "test"}))
+             "Test Web server - Auth code flow")
+     [:br]
+     (link-to (str "/oauth2/authorize?"
+                  (encode-params {:client_id test-client-id
+                                  :redirect_uri "/test/redirect"
+                                  :response_type "token"
+                                  :state "teststate"
+                                  :scope "test"}))
+             "Test two legged oauth flow")
      ]))
-
 
 ; url that performs login on a test user 
 ; This is convenience for testing that provides fast login
@@ -50,22 +68,11 @@
 
 ;; testing code 
 
-(def test-client-id "wj6F0pX70z3ZgN1skf7m6COjaeFXL3kG" )
-
 ; Pretend to be a client making an oauth Authorization request 
-(defpage "/test/authorize" []
-  (common/layout 
-    [:p  "Test Authorize "]
-    (link-to (str "/oauth2/authorize?"
-                  (encode-params {:client_id test-client-id
-                                  :redirect_uri "/test/redirect"
-                                  :response_type "code"
-                                  :state "teststate"
-                                  :scope "test"}))
-             "Authorize")))
 
 
-; Rediret URL for testing purposes
+
+; Redirect URL for testing purposes
 (defpage "/test/redirect" {:keys [code] :as req} 
   (common/layout 
     [:h2 "Redirect test page" ]
@@ -102,8 +109,12 @@
         ; else
         [:p "There was an error. " (prn result)]))))
 
- 
+; Simulates a protected resource
 (defpage "/test/resource" {:keys [access_token]} 
   (common/layout
-    [:p "Test Access for " access_token ]))
+    [:p "Resource Access Test: access_token=" access_token ]
+    (if-let [t (db/get-token-by-id access_token)]
+      [:p "Token found (OK),  scope = " (:scope t)]
+      ; else
+      [:p "Token is invalid"])))
   

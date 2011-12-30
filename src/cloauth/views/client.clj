@@ -47,27 +47,29 @@
 ; Display a single read only client record
 (defpartial display-client [clientRec] 
   [:tr
-    [:td (link-to (str "/client/admin/delete?clientId=" (:clientId clientRec)) "delete")]
     [:td (:ownerId clientRec)]
     [:td (:companyName clientRec)]
-    [:td (:description clientRec)]])
+    [:td (:description clientRec)]
+    [:td (link-to (str "/client/admin/delete?clientId=" (:clientId clientRec)) "delete")]])
   
 (defpartial display-clients [] 
-  [:table 
+  [:table.zebra-striped
+   [:thead
    [:tr 
-    [:th  {:width "10%"} "Action"]
     [:th {:width "20%"} "Owner"]
     [:th {:width "30%"} "Company"]
-    [:th {:width "40%"} "Description"]]
-
-   (map #(display-client %)  (db/query-client nil ))])
+    [:th {:width "40%"} "Description"]
+    [:th  {:width "10%"} "Action"]]]
+    
+   [:tbody
+   (map #(display-client %)  (db/query-client nil ))]])
 
 ; Admin clients
 ; todo: Check role if admin - they can see all clients
 ;  - if user - only clients they have registered
 (defpage "/client/admin" [] 
   (common/layout  
-    [:h1 "Registered Clients"]
+    [:h4 "Registered Clients"]
     [:p (display-clients) ]))
 
 (defpage "/client/admin/delete" {:keys [clientId]}
