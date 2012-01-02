@@ -1,4 +1,8 @@
 (ns cloauth.views.oauth 
+  "View and Route handlers for our OAuth entry points
+  
+   uses the oauth request functions in cloauth.oauth2
+  OAuth Spec: http://tools.ietf.org/html/draft-ietf-oauth-v2-22"
   (:require [noir.response :as resp]
             [noir.session :as session]
             [cloauth.oauth2 :as oauth]
@@ -9,9 +13,6 @@
         hiccup.page-helpers
         hiccup.form-helpers))
 
-;; Entry points for the OAuth protocol 
-
-;; OAuth Spec: http://tools.ietf.org/html/draft-ietf-oauth-v2-22
 
 ;; Client Authentication can use HTTP Basic Auth
 ;; Example: Authorization: Basic czZCaGRSa3F0MzpnWDFmQmF0M2JW
@@ -20,27 +21,29 @@
 ;;   parameters is NOT RECOMMENDED,
 
 
-(defn send-redirect [request params] 
-  "Send a redirect. If there is a state variablin the request it will be 
-   automatically appended to the redirect query string"
+(defn- send-redirect [request params] 
+  "Send a redirect. If there is a state variable in the request it will be 
+   automatically appended to the redirect query string
+    request - oauth request. Contains the redirectUri and the optional state
+    params - map of response params to send back with the redirect. They will be param encoded"
   (prn "Redirect to " request  " with params " params)
   (resp/redirect (str (:redirectUri request) "?"
                       (encode-params 
-                        (if-let [state (:state params)]
+                        (if-let [state (:state request)]
                           (assoc params :state state)
                           params)))))
                                             
-
-(defn error-response [request] 
+(defn- error-response [request] 
   "Send the appropriate error response back to the originator.
   Only If the redirectUri is valid can we redirect back to the client, otherwise we need
   to let the user know the request was malformed. 
-  We should not redirect back to an unverifed / unregistered URI"
-  (if (oauth/redirectUri-invalid? request)
-    (render "/oauth2/error" {:error "Bad request (redirect URI is not registered)"})
-    ; else - redirect Uri is OK, but there is some other error
-    ; redirect back to client with Json error response
-    (send-redirect request {:error (name (oauth/error-code request)) })))
+  We should never redirect back to an unverifed / unregistered URI"
+  (let [code (:error_code request)]
+    (if (=  code :redirectUriInvalid)
+      (render "/oauth2/error" {:error "Bad request (redirect URI is not registered)"})
+      ; else - redirect Uri is OK, but there is some other error
+      ; redirect back to client with Json error response
+      (send-redirect request {:error code}))))
   
 
 ;;
@@ -56,44 +59,41 @@
 ;
 (defpage "/oauth2/authorize"  {:keys [client_id response_type redirect_uri scope state] :as req} 
   ;(prn "Authorize  Request client=" client_id " type " response_type " redirect " redirect_uri)
-  (let [request (oauth/new-auth-request client_id response_type redirect_uri scope state)]
+  (let [request (oauth/new-oauth-request client_id response_type redirect_uri scope state)]
     (prn "Created request " request)
-    (if (oauth/error-code request)
+    (if (:error_code request)
       (error-response request)
       ; else - get consent
       (render "/oauth2/consent" {:oauth-request request}))))
 
-
 ; User Consent page 
 ; User must approve / deny the request
+; TODO: Support pluggable consent pages for apps, or better ways
+; of registering the "scope" description
 (defpage "/oauth2/consent" {:keys [oauth-request] :as req}  
   (prn "OAuth request " oauth-request )
   (session/flash-put! oauth-request)
   (let [client (db/get-client-by-clientId (:clientId oauth-request))]
     (common/layout 
-      [:h1 "Approve Access Request"]
-      [:h3 "Company Requesting Access: " (:companyName client)]
-      [:h3 "Company Description:" (:description client)]
-      [:p "Access Requested: " (:scope oauth-request) ]
+      [:h2 "Approve Access Request"]
+      [:h3 "Organization Requesting Access: " (:companyName client)]
+      [:h3 "Organization Description:" (:description client)]
+      [:p "Access Scope Requested: " (:scope oauth-request) ]
       [:p "Please Grant or Deny this request: " ]
       [:p (link-to "/oauth2/consent/decide?d=grant" "Grant Request")]
       [:p (link-to "/oauth2/consent/decide?d=deny" "Deny Request" )]
       )))
 
-
 (defn- request-granted [request] 
   "The user has granted the request "
   (if (= (:responseType request) "token")
-     ; token type - 2 legged oauth
+     ; token type - 2 legged oauth - we send back an access token - not a code token
      (resp/json "token")  ; todo:
      ; else
-     (send-redirect request (oauth/auth-code-request request))))
+     (send-redirect request (oauth/handle-oauth-code-request request))))
     
 (defn- request-denied [request] 
-  (if (= (:responseType request) "token")
-    ; token type - send json back 
-    (resp/json {:error "access_denied" })
-    (send-redirect request {:error "access_denied" })))
+   (error-response (merge request {:error_code "access_denied"})))
 
 (defpage "/oauth2/consent/decide" {:keys [d] } 
   (if-let [request (session/flash-get)] 
@@ -101,10 +101,10 @@
       (request-granted request)
       ; else
       (request-denied request))
-    ; else - if there is no request the session - bad request
+    ; else - if there is no request in the flash session - bad request
     (common/layout 
-      [:h1 "Error"]
-      [:p "Bad Request. Please Retry "])))
+      [:h2 "Error"]
+      [:p "Something went wrong (was the page bookmarked?). Please Retry "])))
  
 ; Todo - add client auth filter
 
@@ -123,9 +123,8 @@
 (defpage [:any "/client/token"]  {:keys [client_id client_secret redirect_uri grant_type code] :as req} 
   ;(println "Token Request " (:params req))
   (let [request (oauth/new-token-request client_id client_secret redirect_uri grant_type code)]
-    (resp/json (oauth/auth-token-request request))))
+    (resp/json (oauth/handle-oauth-token-request request))))
  
-
 
 (defpage "/oauth2/error" {:keys [error]  :as request}
   (common/layout 

@@ -16,62 +16,70 @@
 (defprotocol ValidateRequestProtocol 
     (validate [this]))
 
-(defn error-code [r]
-  "Get the error code from a request"
-  (-> r :errors :error))
 
 (defn has-error? [r] 
-  (error-code r))
-
-(defn error-description [r]
-  "Get the error description from a request"
-  (-> r :errors :errorDescription))
-
-  
-(defprotocol AuthRequestProtocol
-  (redirectUri-invalid? [this]))
+  " Does the request have an error"
+  (:error_code r))
   
 
+; "Check" protocols - returns :error_code/:error_descripition set or nil if everything is OK
+
+(defn- check-valid-client-id [oauth-request] 
+  "Make sure the client id is valid"
+       (if-not (db/get-client-by-clientId (:clientId oauth-request))
+                {:error_code :redirectUriInvalid 
+                 :error_description "Bad client id"}))
+
+; todo: we may have more than one redirect uri....
+(defn- check-valid-redirectUri [oauth-request] 
+  "Make sure the redirect URI is registered" 
+  (let [client (db/get-client-by-clientId (:clientId oauth-request))
+        clientUris (:redirectUri client)
+        uri (:redirectUri oauth-request)]
+         (if-not (or (= uri clientUris)
+                     (some uri clientUris))
+           {:error_code :invalid_request 
+            :error_description "Redirect URI is not registered"})))
+  
+  
 ; errors - is a map consisting of :errorcode - oauth error code 
 ; :error_description -    error_uri (optional)
 
-(defrecord AuthRequest [clientId responseType redirectUri scope state errors]
+; OAuth Request record - generic
+(defrecord OAuthRequest [clientId responseType redirectUri scope state]
   ValidateRequestProtocol 
-  (validate [this] (assoc this :errors {})) ; todo: TBD
- 
-  AuthRequestProtocol
-   ; todo - should we check this some other way?
-  (redirectUri-invalid? [this]
-                        (= (error-code this) :redirectUriInvalid)))
+  (validate [this] 
+     (merge this 
+      (or 
+        (check-valid-client-id this)))))
 
-(defn new-auth-request [clientId responseType redirectUri scope state] 
-  "Create a new OAuth AuthZ request. Runs validation on the request "
-  (validate (AuthRequest. clientId responseType redirectUri scope state nil)))
+(defn new-oauth-request [clientId responseType redirectUri scope state] 
+  "Create a new OAuth AuthZ request. Runs validation on the request and return the result "
+  (validate (OAuthRequest. clientId responseType redirectUri scope state)))
 
 
-(defn auth-code-request [request]
-  "Handle An authentication code request.
+(defn handle-oauth-code-request [request]
+  "Handle An authentication code request (response_typ= code).
    Return a param map for the response"
   (let [t (db/new-authcode (:clientId request) (:scope request))]
      (db/insert-token! t)
      {:code (:token t)}))
   
  
-; should be in db?
 (defn valid-client? [id secret]
   "Check to see that client has a valid id and secret"
   (if-let [client  (db/get-client-by-clientId id)]
     (= secret (:clientSecret client))))
 
-(defn- check-client [id secret]
+(defn- check-client-id-secret [id secret]
  "check the client id and secret match"
   (if-not (valid-client? id secret)
-    {:error :unauthorized_client
+    {:error_code :unauthorized_client
      :error_description "Client is not authorized"}))
 
 (defn- check-grantType [grantType] 
   (if (not= grantType "authorization_code") 
-    {:error :invalidrequest
+    {:error_code :invalidrequest
      :error_description "Grant type must be authorization_code"}))
 
 (defn- check-authCode [clientId code]
@@ -84,7 +92,7 @@
           (not= clientId  (:clientId t))
           ; what else to check?
           )
-          {:error :unauthorized_client
+          {:error_code :unauthorized_client
            :error_description "ClientId or code is  invalid"})))             
     
 ; Token Handling
@@ -116,13 +124,16 @@
 
 
 ; todo: Have to look up the user id
-(defn auth-token-request [request] 
-  "Handle an token request. Return a map that will be converted into JSON response
+(defn handle-oauth-token-request [request] 
+  "Handle an token request. 
+   At this point validation has already been run on the request
+   Return a map that will be converted into JSON response
    request - Token request
    "
   (prn "Token request " request)
   (if (has-error? request)
-    (:errors request) ; will return map with error_code set 
+    {:error (:error_code request) 
+     :error_description (:error_description request)}
     ; else
     (let [clientId (:clientId request)
           code (:code request)
