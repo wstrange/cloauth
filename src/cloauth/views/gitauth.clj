@@ -24,22 +24,6 @@ See http://code.google.com/apis/identitytoolkit/v1/acguide.html
 ;; Auth check routes
 ;; TODO: 
 
-; Any URI route that starts with this java regex pattern is public
-(def public-uris #"/(favicon|css|js|authn|test|login|client).*")
-
-(defn protected-uri? [uri] 
-  " not nil if this uri is protected" 
-  (not (or (= uri "/") 
-      (re-matches public-uris uri))))
-
-
-;; todo: rewrite as a more generic filter
-; the user must be authenticated to request a protected uri 
-(pre-route [:any "/*"] {:as req} 
-     (if (and (protected-uri? (:uri req)) (nil? (db/logged-in?)))
-       (do (session/flash-put! "You must login first!")
-         (resp/redirect "/login"))))
-  
 
 ;; Google Identity Toolkit (GIT) Integration
 

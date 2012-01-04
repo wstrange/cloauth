@@ -72,15 +72,18 @@
 
 
 
-; Redirect URL for testing purposes
-(defpage "/test/redirect" {:keys [code] :as req} 
+; Redirect callback URL for testing purposes
+; The same redirect url is used for both 2 legged (auth_code) and 3 legged response
+(defpage "/test/redirect" {:keys [code access_token token_type expires_in] :as req} 
   (common/layout 
     [:h2 "Redirect test page" ]
-    (if code 
+    (cond code 
       [:div 
        [:p "Use code to get an access token"]
        [:p (link-to (str "/test/get-token?code=" code) "Get Access Token")]]
-       ; else
+      access_token 
+        [:p "Access Token " access_token " Expires " expires_in ]
+       :else
        [:p "There was an error " (:error req)])))
 
 ; Show the result of exchanging a auth code for a token

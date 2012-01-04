@@ -103,7 +103,7 @@
   (validate [this]
             (assoc this :errors 
               (merge   ; todo: should we return multiple errors?
-                (check-client clientId clientSecret)
+                (check-client-id-secret clientId clientSecret)
                 (check-grantType grantType)
                 (check-authCode clientId code )))))
 
@@ -122,10 +122,21 @@
    the remain time in seconds"
   (msec-to-sec (- future-msec (System/currentTimeMillis) )))
 
+; todo: Should we parameterize the expiry time?
+(defn make-access-token [clientId userId scope]
+  "Create a new access token. Assumes request has been validated
+  saves the access token to the data store and returns a param map
+  that can be used as JSON response"
+  (let [t (db/new-access-token clientId userId scope)]
+    (db/insert-token! t)
+     {:access_token (:token t)
+      :token_type "Bearer"
+      :expires_in (expiry (:expires t))}))
+
 
 ; todo: Have to look up the user id
-(defn handle-oauth-token-request [request] 
-  "Handle an token request. 
+(defn handle-oauth-token-client-request [request] 
+  "Handle an token request made by a client (not a user). 
    At this point validation has already been run on the request
    Return a map that will be converted into JSON response
    request - Token request
@@ -139,9 +150,14 @@
           code (:code request)
           codeToken (db/get-token-by-id code)        
           userId (:userId codeToken)
-          scope (:scope codeToken)
-          t (db/new-access-token clientId userId scope)]
-     (db/insert-token! t)
-     {:access_token (:token t)
-      :token_type "Bearer"
-      :expires_in (expiry (:expires t))})))
+          scope (:scope codeToken)]
+     (make-access-token clientId userId scope))))
+
+(defn handle-oauth-token-user-request [oauthrequest] 
+  "This is the 2 legged oauth handler
+  The request has come from a web client (by JS perhaps) and 
+  the request is for an access_token (not a code)"
+  (let  [userId (db/current-userName)
+         clientId (:clientId oauthrequest)
+         scope (:scope oauthrequest)]
+    (make-access-token clientId userId scope)))

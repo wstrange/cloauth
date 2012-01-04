@@ -88,10 +88,10 @@
   "The user has granted the request "
   (if (= (:responseType request) "token")
      ; token type - 2 legged oauth - we send back an access token - not a code token
-     (resp/json "token")  ; todo:
+     (send-redirect request (oauth/handle-oauth-token-user-request request))
      ; else
      (send-redirect request (oauth/handle-oauth-code-request request))))
-    
+     
 (defn- request-denied [request] 
    (error-response (merge request {:error_code "access_denied"})))
 
@@ -106,12 +106,6 @@
       [:h2 "Error"]
       [:p "Something went wrong (was the page bookmarked?). Please Retry "])))
  
-; Todo - add client auth filter
-
-; use this for debug..
-(comment
-(pre-route [:any "/client/token"]  {:as req} 
-           (println "/client req " req  "\nparams " (:params req))))
 
 ; Token Endpoint 
 ; 
@@ -123,7 +117,7 @@
 (defpage [:any "/client/token"]  {:keys [client_id client_secret redirect_uri grant_type code] :as req} 
   ;(println "Token Request " (:params req))
   (let [request (oauth/new-token-request client_id client_secret redirect_uri grant_type code)]
-    (resp/json (oauth/handle-oauth-token-request request))))
+    (resp/json (oauth/handle-oauth-token-client-request request))))
  
 
 (defpage "/oauth2/error" {:keys [error]  :as request}
@@ -142,7 +136,6 @@
       [:td (:description client)]
       [:td (link-to (str "/oauth2/user/revoke?token=" (:token token)) "Revoke Access")]
     ]))
-
 
 ;;; User Token Management
 ; Show the users auth codes
@@ -171,5 +164,3 @@
   (db/delete-token! token)
   (resp/redirect "/oauth2/user/tokens"))
 
-
-  

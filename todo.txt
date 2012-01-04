@@ -14,3 +14,6 @@ Token Expiry
     
 client - redirectUri - could be a collection
  
+ If a user has previously authorized a client, should we not prompt for authentication again?
+ 
+ 
