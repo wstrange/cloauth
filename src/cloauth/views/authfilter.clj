@@ -37,6 +37,5 @@
      (not (db/logged-in?))  (please-login uri)
      ; Is the page an admin page?
      (admin-page? uri)  (print "admin page! " uri)
-     ; else - they must authenticate - redirect to login
-     :else  (do (println "Warning: No auth check match for " uri )
-                (please-login uri))))
+     ; else - page is OK
+     :else  nil))

@@ -25,7 +25,6 @@
              [:title "Cloauth"]
              (map #(get includes %) incls)
              (map #(get gitkit/javascripts %) scripts) 
-             ;[:style {:type "text/css"}  "body { padding-top: 60px;}  input { box-sizing: content-box;}"]
               [:style {:type "text/css"}  "body { padding-top: 60px;}  "]
              ])
 

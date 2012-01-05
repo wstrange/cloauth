@@ -7,8 +7,8 @@
 
 (defpage "/" []
          (common/layout
-           [:h1 "OAuth AZ Server"]
-           [:p "This is the public page"]
+           [:h2 "OAuth AZ Server"]
+           [:p "Welcome"]
            [:p (session/flash-get)]))
 
 ;; Todo - check for continuing request redirect

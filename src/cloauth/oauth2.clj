@@ -42,20 +42,27 @@
             :error_description "Redirect URI is not registered"})))
   
   
+(defn request-needs-approval? [oauth-request] 
+  "true if a request needs to be approved. This will happen if
+   the request is new and the user has not previosly approved it, or the scopes have changed"
+  true)
+
+
+
 ; errors - is a map consisting of :errorcode - oauth error code 
 ; :error_description -    error_uri (optional)
 
 ; OAuth Request record - generic
-(defrecord OAuthRequest [clientId responseType redirectUri scope state]
+(defrecord OAuthRequest [clientId responseType redirectUri scope state access_type]
   ValidateRequestProtocol 
   (validate [this] 
      (merge this 
       (or 
         (check-valid-client-id this)))))
 
-(defn new-oauth-request [clientId responseType redirectUri scope state] 
+(defn new-oauth-request [clientId responseType redirectUri scope state access_type] 
   "Create a new OAuth AuthZ request. Runs validation on the request and return the result "
-  (validate (OAuthRequest. clientId responseType redirectUri scope state)))
+  (validate (OAuthRequest. clientId responseType redirectUri scope state access_type)))
 
 
 (defn handle-oauth-code-request [request]

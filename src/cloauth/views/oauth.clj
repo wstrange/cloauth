@@ -57,14 +57,22 @@
 ;      resource owner via user-agent redirection
 ; http://code.google.com/apis/accounts/docs/OAuth2WebServer.html
 ;
-(defpage "/oauth2/authorize"  {:keys [client_id response_type redirect_uri scope state] :as req} 
+; These look like google specific extensions:
+; approval_prompt = force or auto to force reprompt for consent
+; access_type = online / offline . offline triggers a refresh token to be sent with the first access token 
+
+(defpage "/oauth2/authorize"  {:keys [client_id response_type redirect_uri scope state access_type approval_prompt] :as req} 
   ;(prn "Authorize  Request client=" client_id " type " response_type " redirect " redirect_uri)
-  (let [request (oauth/new-oauth-request client_id response_type redirect_uri scope state)]
+  (let [request (oauth/new-oauth-request client_id response_type redirect_uri scope state access_type)]
     (prn "Created request " request)
     (if (:error_code request)
       (error-response request)
       ; else - get consent
-      (render "/oauth2/consent" {:oauth-request request}))))
+      (if (or (= approval_prompt "force") 
+              (oauth/request-needs-approval? request))
+        (render "/oauth2/consent" {:oauth-request request})
+        ;else - request is preapproved 
+        (request-granted request)))))
 
 ; User Consent page 
 ; User must approve / deny the request
@@ -75,9 +83,9 @@
   (session/flash-put! oauth-request)
   (let [client (db/get-client-by-clientId (:clientId oauth-request))]
     (common/layout 
-      [:h2 "Approve Access Request"]
-      [:h3 "Organization Requesting Access: " (:companyName client)]
-      [:h3 "Organization Description:" (:description client)]
+      [:h2 "Approve Application Access Request"]
+      [:h4 "Organization Requesting Access: " (:companyName client)]
+      [:h4 "Organization Description:" (:description client)]
       [:p "Access Scope Requested: " (:scope oauth-request) ]
       [:p "Please Grant or Deny this request: " ]
       [:p (link-to "/oauth2/consent/decide?d=grant" "Grant Request")]
