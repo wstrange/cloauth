@@ -5,8 +5,8 @@
                            [congomongo "0.1.7"]
                            [clj-http "0.2.5"]
                            ; for rdb 
-                           ;[korma "0.3.0-alpha12"]
-                           ;[mysql/mysql-connector-java "5.1.18"]
+                           [korma "0.3.0-alpha12"]
+                           [mysql/mysql-connector-java "5.1.18"]
                             ]
             :dev-dependencies [[lein-eclipse "1.0.0"]]
             :main cloauth.server)

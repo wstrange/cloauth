@@ -2,7 +2,7 @@
   (:use noir.core
         hiccup.core
         hiccup.page-helpers)
-  (:require [cloauth.models.db :as db]
+  (:require [cloauth.models.kdb :as db]
             [gitauth.gitkit :as gitkit]
             ))
 

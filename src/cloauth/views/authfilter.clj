@@ -1,7 +1,7 @@
 (ns cloauth.views.authfilter
   "Authentication Filters"
   (:require 
-            [cloauth.models.db :as db]
+            [cloauth.models.kdb :as db]
             [noir.session :as session]
             [noir.response :as resp])
   (:use noir.core))
@@ -10,7 +10,7 @@
 ; Any URI route that matches this java regex pattern is public
 ; Usefull regex tester: http://www.regexplanet.com/simple/index.html
 ; Regex docs: http://docs.oracle.com/javase/7/docs/api/java/util/regex/Pattern.html
-(def public-uris #"/|^/(favicon|css|js|authn|test|login|client).*")
+(def public-uris #"/|^/(favicon|css|js|authn|img|test|login|client).*")
 
 
 (defn public-uri? [uri]

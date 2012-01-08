@@ -6,7 +6,8 @@
   (:require [noir.response :as resp]
             [noir.session :as session]
             [cloauth.oauth2 :as oauth]
-            [cloauth.models.db :as db]
+            [cloauth.token :as token]
+            [cloauth.models.kdb :as db]
             [cloauth.views.common :as common])
   (:use noir.core
         hiccup.core
@@ -52,6 +53,18 @@
 ;  Secret is not used. The redirectURI must be pre-registered.
 
 
+(defn- request-granted [request] 
+  "The user has granted the request "
+  (if (= (:responseType request) "token")
+     ; token type - 2 legged oauth - we send back an access token - not a code token
+     (send-redirect request (token/create-auth-code request))
+     ; else
+     (send-redirect request (token/create-auth-code request))))
+     
+(defn- request-denied [request] 
+   (error-response (merge request {:error_code "access_denied"})))
+
+
 ;; Authorization Endpoint 
 ;  used to obtain authorization from the
 ;      resource owner via user-agent redirection
@@ -87,21 +100,13 @@
       [:h4 "Organization Requesting Access: " (:companyName client)]
       [:h4 "Organization Description:" (:description client)]
       [:p "Access Scope Requested: " (:scope oauth-request) ]
-      [:p "Please Grant or Deny this request: " ]
-      [:p (link-to "/oauth2/consent/decide?d=grant" "Grant Request")]
-      [:p (link-to "/oauth2/consent/decide?d=deny" "Deny Request" )]
+      [:br ]
+      [:p  "Please "  (link-to "/oauth2/consent/decide?d=grant" "Grant")
+          "  or "
+          (link-to "/oauth2/consent/decide?d=deny" "Deny" )
+          " this request"]
       )))
 
-(defn- request-granted [request] 
-  "The user has granted the request "
-  (if (= (:responseType request) "token")
-     ; token type - 2 legged oauth - we send back an access token - not a code token
-     (send-redirect request (oauth/handle-oauth-token-user-request request))
-     ; else
-     (send-redirect request (oauth/handle-oauth-code-request request))))
-     
-(defn- request-denied [request] 
-   (error-response (merge request {:error_code "access_denied"})))
 
 (defpage "/oauth2/consent/decide" {:keys [d] } 
   (if-let [request (session/flash-get)] 
@@ -147,14 +152,14 @@
 
 ;;; User Token Management
 ; Show the users auth codes
-(defpartial auth-tokens [] 
+(defpartial user-grants [userId] 
   [:table 
     [:tr 
     [:th  {:width "10%"} "Company"]
     [:th  {:width "20%"} "Scope"]
     [:th {:width "40%"} "Description"]
     [:th {:width "30%"} "Action"]]
-  (map #(display-token %) (db/get-user-auth-codes))])
+  (map #(display-token %) (db/get-grants userId))])
 
 
 ; User page to review OAuth2 Grants 
@@ -162,7 +167,7 @@
   (common/layout 
     [:h4 "Authorized Applications "]
     [:p "The following applications are authorized to access your data"]
-    [:p (auth-tokens)]
+    [:p (user-grants (db/current-userId))]
     ))
   
 ; Revoke a granted user token

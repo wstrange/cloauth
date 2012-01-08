@@ -4,7 +4,7 @@ This uses the Google Identity Toolkit (GIT)
 See http://code.google.com/apis/identitytoolkit/v1/acguide.html
 "
   (:require [cloauth.views.common :as common]
-            [cloauth.models.db :as db]
+            [cloauth.models.kdb :as kdb]
             [cloauth.util :as util]
             [noir.session :as session]
             [noir.validation :as vali]
@@ -20,7 +20,6 @@ See http://code.google.com/apis/identitytoolkit/v1/acguide.html
         hiccup.form-helpers))
 
 
-
 ;; Auth check routes
 ;; TODO: 
 
@@ -32,7 +31,8 @@ See http://code.google.com/apis/identitytoolkit/v1/acguide.html
 ; Should return a json response of {"registered" :true/false } as appropriate 
 (defpage [:post "/authn/userstatus"] {:keys [email]} 
   (println "/userstatus check" email)
-  (resp/json {:registered (db/registered-user? email)}))
+  
+  (resp/json {:registered (kdb/is-registered? email)}))
 
 
 ; After prompting for a password for a legacy account, 
@@ -79,13 +79,14 @@ See http://code.google.com/apis/identitytoolkit/v1/acguide.html
 ; See http://code.google.com/apis/identitytoolkit/v1/acguide.html
 (defn login-verifed [res]
   (let [email (:verifiedEmail res)
-        user (db/get-user email)
+        user (kdb/get-user email)
         missing (nil? user)
         js (json/generate-string {:email email :registered (not missing)})]
         (println "Login verfied js=" js  " user " user)
     (if missing 
       (session/put! :signup (merge res {:userName email})))
-      (db/login! user)
+     
+    (kdb/login! user)
     (generate-git-response (str "window.google.identitytoolkit.notifyFederatedSuccess(" js  ")"))))
 
 
@@ -154,13 +155,14 @@ See http://code.google.com/apis/identitytoolkit/v1/acguide.html
         user (merge u edits)
         ]
     (println "u " user )
-    (db/add-user! user )
-    (db/login! user)
+    (kdb/insert-user! user )
+    ; force the login - which triggers read of newly inserted
+    ; record 
+    (kdb/login! (kdb/get-user (:userName user)))
     ; nuke the signup session var as it is not needed anymore
     (session/remove! :signup)) 
   (resp/redirect "/welcome")) 
 
 (defpage "/signup/cancel" {:keys [userName]}
-  (db/remove-user! {:userName (db/current-user-record)})
   (render "/authn/logout"))
   

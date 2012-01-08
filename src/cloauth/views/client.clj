@@ -2,7 +2,7 @@
   (:require [noir.response :as resp]
              [noir.session :as session]
              [cloauth.views.common :as common]
-             [cloauth.models.db :as db])
+             [cloauth.models.kdb :as kdb])
   (:use noir.core
         hiccup.core
         hiccup.page-helpers
@@ -32,37 +32,38 @@
       [:p "Register New Client" ]
      [:div
       (simple-post-form "/client/register" 
-                      {:companyName "Company Name"
+                      {:orgName "Organization Name"
                        :description "Description"
                        :redirectUrl "Redirect URL"})]))
 
 
-(defpage [:post "/client/register"]  {:keys [companyName description redirectUrl] :as form}
+(defpage [:post "/client/register"]  {:keys [orgName description redirectUrl] :as form}
   (println "register " form)
-  (db/insert-client! (db/new-client companyName description redirectUrl))
+  (kdb/insert-client! 
+    (kdb/new-client orgName description redirectUrl (kdb/current-userId)))
   (session/flash-put! "Added new Client")
-  (resp/redirect "/"))
+  (resp/redirect "/client/admin"))
   
 
 ; Display a single read only client record
 (defpartial display-client [clientRec] 
   [:tr
-    [:td (:ownerId clientRec)]
-    [:td (:companyName clientRec)]
+    [:td (:userName clientRec)]
+    [:td (:orgName clientRec)]
     [:td (:description clientRec)]
-    [:td (link-to (str "/client/admin/delete?clientId=" (:clientId clientRec)) "delete")]])
+    [:td (link-to (str "/client/admin/delete?id=" (:id clientRec)) "delete")]])
   
 (defpartial display-clients [] 
   [:table.zebra-striped
    [:thead
    [:tr 
     [:th {:width "20%"} "Owner"]
-    [:th {:width "30%"} "Company"]
+    [:th {:width "30%"} "Organization"]
     [:th {:width "40%"} "Description"]
     [:th  {:width "10%"} "Action"]]]
     
    [:tbody
-   (map #(display-client %)  (db/query-client nil ))]])
+   (map #(display-client %)  (kdb/all-clients))]])
 
 ; Admin clients
 ; todo: Check role if admin - they can see all clients
@@ -72,7 +73,7 @@
     [:h4 "Registered Clients"]
     [:p (display-clients) ]))
 
-(defpage "/client/admin/delete" {:keys [clientId]}
-  (db/delete-client!  {:clientId clientId})
-  (render "/client/admin"))
+(defpage "/client/admin/delete" {:keys [id]}
+  (kdb/delete-client! id)
+  (resp/redirect "/client/admin"))
 

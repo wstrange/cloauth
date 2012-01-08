@@ -1,5 +1,8 @@
 (ns cloauth.oauth2
-  (:require [cloauth.models.db :as db]))
+  "OAuth2 protocol flow functions" 
+  (:require [cloauth.models.kdb :as db]
+            [cloauth.token :as token])
+  )
 
 
 ; OAuth 2 error codes - as keys
@@ -12,17 +15,15 @@
                    :redirectUriInvalid  
                    }))
 
-
 (defprotocol ValidateRequestProtocol 
     (validate [this]))
-
 
 (defn has-error? [r] 
   " Does the request have an error"
   (:error_code r))
   
 
-; "Check" protocols - returns :error_code/:error_descripition set or nil if everything is OK
+; "Check" protocols - returns :error_code/:error_description set or nil if everything is OK
 
 (defn- check-valid-client-id [oauth-request] 
   "Make sure the client id is valid"
@@ -64,13 +65,16 @@
   "Create a new OAuth AuthZ request. Runs validation on the request and return the result "
   (validate (OAuthRequest. clientId responseType redirectUri scope state access_type)))
 
-
+(comment
 (defn handle-oauth-code-request [request]
-  "Handle An authentication code request (response_typ= code).
-   Return a param map for the response"
+  "Handle An authentication code request (response_typ= code)
+   At this point the user has already constented to the request
+   and we have validated the request
+   Return a param map for the response to return the client"
   (let [t (db/new-authcode (:clientId request) (:scope request))]
      (db/insert-token! t)
      {:code (:token t)}))
+)
   
  
 (defn valid-client? [id secret]
@@ -91,12 +95,12 @@
 
 (defn- check-authCode [clientId code]
   "Check that the auth code for the request is in fact valid "
-  (let [t (db/get-token-by-id code)]
+  (let [t (token/get-authcode-entry code)]
     (if (or 
           ; there is no auth code in the db
           (nil? t)  
           ; there is one, but the clientId does not match
-          (not= clientId  (:clientId t))
+          (not= clientId  (-> t :request :clientId ))
           ; what else to check?
           )
           {:error_code :unauthorized_client
@@ -129,22 +133,15 @@
    the remain time in seconds"
   (msec-to-sec (- future-msec (System/currentTimeMillis) )))
 
-; todo: Should we parameterize the expiry time?
-(defn make-access-token [clientId userId scope]
-  "Create a new access token. Assumes request has been validated
-  saves the access token to the data store and returns a param map
-  that can be used as JSON response"
-  (let [t (db/new-access-token clientId userId scope)]
-    (db/insert-token! t)
-     {:access_token (:token t)
-      :token_type "Bearer"
-      :expires_in (expiry (:expires t))}))
 
 
+
+(comment 
 ; todo: Have to look up the user id
 (defn handle-oauth-token-client-request [request] 
   "Handle an token request made by a client (not a user). 
    At this point validation has already been run on the request
+   i.e.: The client id is valid ...
    Return a map that will be converted into JSON response
    request - Token request
    "
@@ -155,10 +152,12 @@
     ; else
     (let [clientId (:clientId request)
           code (:code request)
-          codeToken (db/get-token-by-id code)        
-          userId (:userId codeToken)
-          scope (:scope codeToken)]
-     (make-access-token clientId userId scope))))
+          authEntry (token/get-authcode-entry code)
+          oauthRequest (:request authEntry)
+          userId (:userId request)
+          scopes (:scopes request)]
+     (token/new-access-token clientId userId scopes))))
+)
 
 (defn handle-oauth-token-user-request [oauthrequest] 
   "This is the 2 legged oauth handler
@@ -167,4 +166,4 @@
   (let  [userId (db/current-userName)
          clientId (:clientId oauthrequest)
          scope (:scope oauthrequest)]
-    (make-access-token clientId userId scope)))
+    (token/new-access-token clientId userId scope)))

@@ -1,7 +1,9 @@
 (ns cloauth.views.testui
-  (:require [cloauth.models.db :as db] 
+  (:require [cloauth.models.kdb :as db] 
+            [cloauth.models.testdb :as testdb] 
             [cloauth.views.common :as common]
             [noir.response :as resp]
+            
             [clj-http.client :as http])
    (:use noir.core
         hiccup.core
@@ -9,26 +11,6 @@
         hiccup.form-helpers
         clojure.data.json))
 
-
-;; Create a test user 
-
-; userName firstName lastName verifiedEmail roles
-
-(def testuser1 (db/new-user "test1" "test" "tester1" "test1@test.com" '(:user :admin)))
-
-
-(def test-client-id "wj6F0pX70z3ZgN1skf7m6COjaeFXL3kG" )
-
-
-
-(defn create-test-user [] 
-  (if (db/get-user "test1")
-    (println "test user exists")
-    (db/add-user! testuser1)))
-
-;; For testing
-
-(create-test-user)
 
 ; Test page
 (defpage "/test" []
@@ -38,7 +20,7 @@
      (link-to "/test/login" "Login as Test User")
      [:br]
      (link-to (str "/oauth2/authorize?"
-                  (encode-params {:client_id test-client-id
+                  (encode-params {:client_id (testdb/testClientId)
                                   :redirect_uri "/test/redirect"
                                   :response_type "code"
                                   :state "teststate"
@@ -46,7 +28,7 @@
              "Test Web server - Auth code flow")
      [:br]
      (link-to (str "/oauth2/authorize?"
-                  (encode-params {:client_id test-client-id
+                  (encode-params {:client_id (testdb/testClientId)
                                   :redirect_uri "/test/redirect"
                                   :response_type "token"
                                   :state "teststate"
@@ -57,7 +39,7 @@
 ; url that performs login on a test user 
 ; This is convenience for testing that provides fast login
 (defpage "/test/login" []
-  (db/login! (db/get-user "test1"))
+  (db/login! (db/get-user testdb/testUser))
   (resp/redirect "/welcome"))
 
 (defpage "/test/sampledata" []
@@ -88,11 +70,11 @@
 
 ; Show the result of exchanging a auth code for a token
 (defpage "/test/get-token" {:keys [code]}
-  (let [client (db/get-client-by-clientId test-client-id)
+  (let [client (db/get-client-by-clientId testdb/testClientId)
         id (:clientId client)
         secret (:clientSecret client)
         params {:code  code 
-                :grant_type "authorization_code"
+                :grant_ttype "authorization_code"
                 :client_id  id
                 :client_secret secret
                 :redirect_uri (:redirectUri client)}
@@ -116,8 +98,10 @@
 (defpage "/test/resource" {:keys [access_token]} 
   (common/layout
     [:p "Resource Access Test: access_token=" access_token ]
-    (if-let [t (db/get-token-by-id access_token)]
+    (if-let [t (db/get-token access_token)]
       [:p "Token found (OK),  scope = " (:scope t)]
       ; else
       [:p "Token is invalid"])))
+
+
   

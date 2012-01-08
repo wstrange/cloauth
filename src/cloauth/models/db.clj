@@ -56,11 +56,7 @@
   (Token. clientId (current-userName) scope :code (+ (System/currentTimeMillis)  (days-to-msec 365))
           (util/gen-id 32)))
 
-(defn new-access-token [clientId userId scope]
-  "Create a new access token. The lifetime defaults to 1 hour - 1 minute for testing"
-  (prn "Create token for " clientId  "userid " userId)
-  (Token. clientId userId scope :access_token (+ (System/currentTimeMillis) (* 1000 60 ))
-          (util/gen-id 32)))
+
       
 (defn insert-token! [t] 
   (mongo/insert! :tokens t))
@@ -111,9 +107,6 @@
         (session/put! :user u)
         false)))
 
-(defn logged-in? []
-  "Not nil if the user is logged in"
-  (current-userName)) 
 
 (defn all-users [] 
   "Return all users... dodgy..."
@@ -146,6 +139,7 @@
   "Remove the user. Query is map matching the user
   Example:  {:userName fred}"
   (mongo/destroy! :users query))
+
 
 
 ;; Client - An OAuth 2 client 
