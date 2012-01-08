@@ -2,7 +2,6 @@
             :description "OAuth AuthZ provider in Clojure"
             :dependencies [[org.clojure/clojure "1.3.0"]
                            [noir "1.2.2"]
-                           [congomongo "0.1.7"]
                            [clj-http "0.2.5"]
                            ; for rdb 
                            [korma "0.3.0-alpha12"]
