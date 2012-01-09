@@ -55,8 +55,13 @@
 
 (defn- request-granted [request] 
   "The user has granted the request "
+  "Remember that the user has granted the request for future"
+  ;(println "request granted req= " request)
+  (db/create-grant (:clientId request)  (:userId request) (:scopes request) (token/generate-token))
+   
   (if (= (:responseType request) "token")
      ; token type - 2 legged oauth - we send back an access token - not a code token
+     ; todo 
      (send-redirect request (token/create-auth-code request))
      ; else
      (send-redirect request (token/create-auth-code request))))
@@ -83,7 +88,7 @@
       (error-response request)
       ; else - get consent
       (if (or (= approval_prompt "force") 
-              (oauth/request-needs-approval? request))
+              (not (oauth/request-already-approved? request)))
         (render "/oauth2/consent" {:oauth-request request})
         ;else - request is preapproved 
         (request-granted request)))))
@@ -101,7 +106,7 @@
       [:h2 "Approve Application Access Request"]
       [:h4 "Organization Requesting Access: " (:orgName client)]
       [:h4 "Organization Description:" (:description client)]
-      [:p "Access Scope Requested: " (:scope oauth-request) ]
+      [:p "Access Scope Requested: " (str (:scopes oauth-request)) ]
       [:br ]
       [:p  "Please "  (link-to "/oauth2/consent/decide?d=grant" "Grant")
           "  or "

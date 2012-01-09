@@ -44,13 +44,12 @@
             :error_description "Redirect URI is not registered"})))
   
   
-(defn request-needs-approval? [oauth-request] 
-  "true if a request needs to be approved. This will happen if
-   the request is new and the user has not previosly approved it, or the scopes have changed"
-  true)
-
-
-
+(defn request-already-approved? [oauth-request] 
+  "true if a request has been previously approved . 
+   Note a change in scope triggers re-approval"
+  (db/grant-scopes-are-the-same 
+    (:userId oauth-request)  (:clientId oauth-request) (:scopes  oauth-request)))
+ 
 ; errors - is a map consisting of :errorcode - oauth error code 
 ; :error_description -    error_uri (optional)
 
@@ -65,7 +64,7 @@
 (defn new-oauth-request [clientId userId responseType redirectUri scope state access_type] 
   "Create a new OAuth AuthZ request. Runs validation on the request and return the result
    we need to convert scopes (space delim) to a list "
-  (let [scopes  (split scope #" " )]
+  (let [scopes  (split scope #"\s+" )]
     (validate (OAuthRequest. clientId userId responseType redirectUri scopes state access_type))))
 
  
@@ -151,9 +150,7 @@
           response (token/new-access-token clientId userId scopes) ]
       
       (token/purge-code code) ; one time use only
-      ; Now the client has used the code, we remember the 
-      ; users consent choice by creating a grant
-      (db/create-grant clientId userId scopes (:refresh_token response))
+     
       ; return the json response
       response
       )))

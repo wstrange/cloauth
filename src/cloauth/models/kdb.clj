@@ -136,18 +136,28 @@
 
 (defentity scope )
 
-(defn get-scope [uri] 
+(defn get-scope-id [uri] 
+  "Given a uri return the scope id"
   (first (select scope (where {:uri [= uri]}))))
 
-; grants 
-(defentity grant 
-  (belongs-to users)
-  (belongs-to clients))
+(defn- get-scope-ids [scopes]
+  "return a sorted list of scope ids that represent the list of given scopes uris. 
+  This is used for comparison
+  To do: this data could be cached for performance. No need to look this up on every search"
+    (sort (map #(:id (get-scope-id % )) scopes)))
+
 
 ; grant_scope - joins set of scopes to a grant
 (defentity grant_scope 
   (belongs-to scope)
   (belongs-to grant))
+
+; grants 
+(defentity grant 
+  (belongs-to users)
+  (belongs-to clients)
+  (has-many grant_scope))
+
 
 (defn- add-scope-to-grant [grantId scope]
   "Add a scope e.g. /api/calendar to 
@@ -160,18 +170,49 @@
              :scope_id (:id s)}))))
 
 (defn create-grant [clientId userId scope-list refreshToken]
-  "Create a new grant. scopes is a list of scopes granted"
+  "Create a new grant. scopes is a list of scopes granted. Existing grants are deleted"
   (println "Create grant clientid=" clientId " userid=" userId " scopes " scope-list " token " refreshToken)
+  ; first we should delete any existing grant
+  ; the db will cascade this
+  (delete grant (where {:clients_id clientId :users_id userId}))
+   
   (let [g (insert grant (values {:clients_id clientId :users_id userId :refreshToken refreshToken}))
         gid (:GENERATED_KEY  g)] 
     (doseq [s scope-list] 
       (add-scope-to-grant gid s))))
  
 (defn get-grants [userId]
+  "Get all the grants for the user - joined with the client descriptions"
  (select grant (with clients) 
      (fields :id :clients.orgName :refreshToken :clients.description)
      (where {:users_id userId})))
 
+
+(defn get-grant-and-scopes [userId clientId]
+  "get the list of scopes for the user for a given client
+   returns nil (if there is no grant) or a sequence of map entries where :scope_id carries the scope"
+  (select grant_scope  (with grant) (where (and {:grant_id :grant.id }
+                                               {:grant.users_id userId :grant.clients_id clientId}))))
+
+
+(defn grant-scopes-are-the-same [userId clientId scopes]
+  "Given a set of scopes, return true if there is an existing grant for the user/client that grants the same set of scopes"
+  
+  (let [sorted-scopes (get-scope-ids scopes)
+        grants (get-grant-and-scopes userId clientId)
+        gids (map #(:scope_id %) grants)
+        sorted-gids (sort gids)]
+    (prn "Check grant scopes" userId clientId sorted-scopes sorted-gids)
+    (= sorted-gids sorted-scopes)))
+       
+
+(defn get-grant-for-clientId [userId clientId]
+  "Get the specific grant a user made for a client or nil if no such grant exists. There will never be more than one grant"
+  "return the grant id and a set of scopes granted"
+  (select scope 
+      (fields :uri)
+      (where {:users_id userId :clients_id clientId})))
+   
 
 (defn delete-grant! [id]  
   (println "delete grant " id)

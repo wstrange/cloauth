@@ -29,8 +29,8 @@
    the remain time in seconds"
   (msec-to-sec (- future-msec (System/currentTimeMillis) )))
 
-(defn min-to-fmsec [min]
-  "minutes to a future msec"
+(defn min-to-future-unix-time [min]
+  "minutes to an absolute future UNIX msec time "
   (+ (System/currentTimeMillis) (* 1000 60 min)))
 
 (defonce authcode-lifetime 10) ; authcode lifetime in minutes
@@ -52,9 +52,9 @@
   (let  [code (generate-token)
          t  {:request oauth-request
              :authcode code ; todo: we can probably get rid of this
-             :expires   (min-to-fmsec authcode-lifetime)}]
+             :expires   ( min-to-future-unix-time authcode-lifetime)}]
        (swap! *auth-codes* assoc code t)
-       (print-tokens)
+       ;(print-tokens)
        {:code code} ))
 
 (defn get-authcode-entry [code] 
@@ -76,7 +76,7 @@
   (let [atoken (generate-token) 
         refreshToken (generate-token)
         tval {:access_token atoken
-              :expires (min-to-fmsec default-access-token-expiry-minutes)
+              :expires (min-to-future-unix-time default-access-token-expiry-minutes)
               :clientId clientId 
               :userId userId
               :scopes scopes}]
@@ -94,7 +94,7 @@
 
 
 (comment
-  "todo - "
+  "todo - create purge task "
   
 (def purge-task (future 
                   (loop [] (do 

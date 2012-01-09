@@ -51,6 +51,8 @@
     [:td (:userName clientRec)]
     [:td (:orgName clientRec)]
     [:td (:description clientRec)]
+    [:td (:id clientRec) [:br] (:clientSecret clientRec)]
+    
     [:td (link-to (str "/client/admin/delete?id=" (:id clientRec)) "delete")]])
   
 (defpartial display-clients [] 
@@ -58,8 +60,9 @@
    [:thead
    [:tr 
     [:th {:width "20%"} "Owner"]
-    [:th {:width "30%"} "Organization"]
-    [:th {:width "40%"} "Description"]
+    [:th {:width "20%"} "Organization"]
+    [:th {:width "30%"} "Description"]
+    [:th {:width "20%"} "id / secret"]
     [:th  {:width "10%"} "Action"]]]
     
    [:tbody
