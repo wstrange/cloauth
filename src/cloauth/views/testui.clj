@@ -1,5 +1,6 @@
 (ns cloauth.views.testui
   (:require [cloauth.models.kdb :as db] 
+            [cloauth.token :as token] 
             [cloauth.models.testdb :as testdb] 
             [cloauth.views.common :as common]
             [noir.response :as resp]
@@ -70,11 +71,11 @@
 
 ; Show the result of exchanging a auth code for a token
 (defpage "/test/get-token" {:keys [code]}
-  (let [client (db/get-client-by-clientId testdb/testClientId)
-        id (:clientId client)
+  (let [client (db/get-client-by-id (testdb/testClientId))
+        id (:id client)
         secret (:clientSecret client)
         params {:code  code 
-                :grant_ttype "authorization_code"
+                :grant_type "authorization_code"
                 :client_id  id
                 :client_secret secret
                 :redirect_uri (:redirectUri client)}
@@ -98,7 +99,7 @@
 (defpage "/test/resource" {:keys [access_token]} 
   (common/layout
     [:p "Resource Access Test: access_token=" access_token ]
-    (if-let [t (db/get-token access_token)]
+    (if-let [t (token/get-token-entry access_token)]
       [:p "Token found (OK),  scope = " (:scope t)]
       ; else
       [:p "Token is invalid"])))

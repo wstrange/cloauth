@@ -19,12 +19,11 @@
                         "/test/redirect" 
                         userId))
         xx  (println "Client id" clientId)
-        grant (db/new-grant clientId userId ["test"])]
+        grant (db/create-grant clientId userId ["test"] "dummyrefreshtoken")]
     (println "Client id=" clientId)
     {:clientId clientId :userId userId}))
 
 
-   
 (defn nuke-it [] 
   (delete db/scope )
   (delete db/clients)

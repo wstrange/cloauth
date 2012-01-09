@@ -7,14 +7,14 @@
 
 (defpage "/" []
          (common/layout
-           [:h2 "OAuth AZ Server"]
+           [:h3 "OAuth AZ Server"]
            [:p "Welcome"]
            [:p (session/flash-get)]))
 
 ;; Todo - check for continuing request redirect
 (defpage "/welcome" []
          (common/layout
-           [:h1 "OAuth AZ Server"]
+           [:h3 "OAuth AZ Server"]
            [:p "Logged in user landing page"]))
 
 ; Page used to force login

@@ -76,7 +76,8 @@
 
 (defpage "/oauth2/authorize"  {:keys [client_id response_type redirect_uri scope state access_type approval_prompt] :as req} 
   ;(prn "Authorize  Request client=" client_id " type " response_type " redirect " redirect_uri)
-  (let [request (oauth/new-oauth-request client_id response_type redirect_uri scope state access_type)]
+  (let [userId (db/current-userId)
+        request (oauth/new-oauth-request client_id userId response_type redirect_uri scope state access_type)]
     (prn "Created request " request)
     (if (:error_code request)
       (error-response request)
@@ -92,21 +93,21 @@
 ; TODO: Support pluggable consent pages for apps, or better ways
 ; of registering the "scope" description
 (defpage "/oauth2/consent" {:keys [oauth-request] :as req}  
-  (prn "OAuth request " oauth-request )
+  ;(prn "OAuth request " oauth-request )
   (session/flash-put! oauth-request)
-  (let [client (db/get-client-by-clientId (:clientId oauth-request))]
-    (common/layout 
+  (let [clientId (:clientId oauth-request)       
+        client (db/get-client-by-id clientId)]
+    (common/layout
       [:h2 "Approve Application Access Request"]
-      [:h4 "Organization Requesting Access: " (:companyName client)]
+      [:h4 "Organization Requesting Access: " (:orgName client)]
       [:h4 "Organization Description:" (:description client)]
       [:p "Access Scope Requested: " (:scope oauth-request) ]
       [:br ]
       [:p  "Please "  (link-to "/oauth2/consent/decide?d=grant" "Grant")
           "  or "
           (link-to "/oauth2/consent/decide?d=deny" "Deny" )
-          " this request"]
-      )))
-
+          " this request"
+          ])))
 
 (defpage "/oauth2/consent/decide" {:keys [d] } 
   (if-let [request (session/flash-get)] 
@@ -128,9 +129,10 @@
 ; todo: Client auth should be enforced here... 
 ; todo: Need to look up the user
 (defpage [:any "/client/token"]  {:keys [client_id client_secret redirect_uri grant_type code] :as req} 
-  ;(println "Token Request " (:params req))
-  (let [request (oauth/new-token-request client_id client_secret redirect_uri grant_type code)]
-    (resp/json (oauth/handle-oauth-token-client-request request))))
+  ;(println "Token Request " req)
+  (let [oauth-request (oauth/new-token-request client_id client_secret redirect_uri grant_type code)]
+    ;(println "Created request" oauth-request)
+    (resp/json (oauth/handle-oauth-token-client-request oauth-request))))
  
 
 (defpage "/oauth2/error" {:keys [error]  :as request}
@@ -140,40 +142,39 @@
     [:p "Error Message:" error]))
 
 ; Display an auth token 
-(defpartial display-token [token]
-  (let [clientId (:clientId token)
-        client (db/get-client-by-clientId clientId)]
+(defpartial display-grant [grant]
     [:tr
-      [:td  (:companyName client)]
-      [:td (:scope token)]
-      [:td (:description client)]
-      [:td (link-to (str "/oauth2/user/revoke?token=" (:token token)) "Revoke Access")]
-    ]))
+      [:td  (:orgName grant)]
+      [:td (:description grant)]
+      ;[:td (:scope grant)]
+     
+      [:td (link-to (str "/oauth2/user/revoke?grant=" (:id grant)) "Revoke Access")]
+    ])
 
 ;;; User Token Management
 ; Show the users auth codes
 (defpartial user-grants [userId] 
   [:table 
     [:tr 
-    [:th  {:width "10%"} "Company"]
-    [:th  {:width "20%"} "Scope"]
+    [:th  {:width "20%"} "Company"]
     [:th {:width "40%"} "Description"]
+    ;[:th  {:width "20%"} "Scope"]
+  
     [:th {:width "30%"} "Action"]]
-  (map #(display-token %) (db/get-grants userId))])
+  (map #(display-grant %) (db/get-grants userId))])
 
 
 ; User page to review OAuth2 Grants 
-(defpage "/oauth2/user/tokens" [] 
+(defpage "/oauth2/user/grants" [] 
   (common/layout 
     [:h4 "Authorized Applications "]
-    [:p "The following applications are authorized to access your data"]
+    [:p "You have authorized the following applications"]
     [:p (user-grants (db/current-userId))]
     ))
   
 ; Revoke a granted user token
 ; todo; Check if user OWNS the token!
-(defpage "/oauth2/user/revoke" {:keys [token]} 
-  (println "Delete token id=" token)
-  (db/delete-token! token)
-  (resp/redirect "/oauth2/user/tokens"))
+(defpage "/oauth2/user/revoke" {:keys [grant]} 
+  (db/delete-grant! grant)
+  (resp/redirect "/oauth2/user/grants"))
 

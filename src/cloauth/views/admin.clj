@@ -1,6 +1,6 @@
 (ns cloauth.views.admin
    (:require [cloauth.views.common :as common]
-            [cloauth.models.db :as db]
+            [cloauth.models.kdb :as db]
             [cloauth.util :as util]
             [noir.session :as session]
             [noir.validation :as vali]
@@ -74,7 +74,7 @@
 
 (defpage "/admin/user/remove" {:keys [user]}
   (println "removing" user)
-  (db/remove-user! {:userName user})
+  (db/delete-username! {:userName user})
   (resp/redirect "/admin"))
 
 

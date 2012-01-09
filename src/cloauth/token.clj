@@ -36,26 +36,32 @@
 (defonce authcode-lifetime 10) ; authcode lifetime in minutes
 
 (defn purge-code [code]
+  ;(println "Purging code " code)
   (swap! *auth-codes* dissoc code))
+
+
+(defn print-tokens [] 
+  (doseq [code @*auth-codes*]
+    (println "code  =" code)))
   
 (defn create-auth-code [oauth-request] 
   "Create a new short lived auth code request
    Returns a map which is used as the json response - 
    contains the generated auth code "
+  (println "Create Auth Code request = " oauth-request)
   (let  [code (generate-token)
          t  {:request oauth-request
              :authcode code ; todo: we can probably get rid of this
              :expires   (min-to-fmsec authcode-lifetime)}]
        (swap! *auth-codes* assoc code t)
+       (print-tokens)
        {:code code} ))
 
 (defn get-authcode-entry [code] 
   "lookup authcode - return the oauth-request map or nil if authcode does not
-  exist. This is a one time deal - the code is deleted 
-  after one use"
-  (let [t  (get @*auth-codes* code)]
-    (if t (purge-code code)) ; its been used - nuke it for future
-    t))
+  exist. "
+  (get @*auth-codes* code))
+  
 
 (defonce default-access-token-expiry-minutes 60)
 
@@ -68,6 +74,7 @@
   saves the access token to memory an returns a map
   that is used as JSON response"
   (let [atoken (generate-token) 
+        refreshToken (generate-token)
         tval {:access_token atoken
               :expires (min-to-fmsec default-access-token-expiry-minutes)
               :clientId clientId 
@@ -77,12 +84,17 @@
       (swap! *access-tokens* assoc atoken tval)
       ; return a json map 
       {:access_token atoken
+       :refresh_token refreshToken
        :token_type "Bearer"
        :expires_in (* 60 default-access-token-expiry-minutes) }))
 
 
+(defn get-token-entry [token] 
+  "todo" )
+
+
 (comment
-  "todo - ")
+  "todo - "
   
 (def purge-task (future 
                   (loop [] (do 
@@ -90,4 +102,7 @@
                           (println "Expire token thread sleeping...." (.getName (Thread/currentThread)))
                           (Thread/sleep 90000))
                     (recur ))))
+
+)
+
 

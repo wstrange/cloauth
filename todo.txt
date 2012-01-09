@@ -1,11 +1,5 @@
 
 
-Auth Filters:
-    Figure out how to implement filters for authentication
-    
-    - Public
-    - User based  - session 
-    - client id/ secret 
 
 Token Expiry 
     Expire code / access tokens
@@ -17,3 +11,4 @@ client - redirectUri - could be a collection
  If a user has previously authorized a client, should we not prompt for authentication again?
  
  
+If a grant has been authorized before we should delete the old entry and update it with the new (scope may have changed)

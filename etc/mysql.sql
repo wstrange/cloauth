@@ -2,6 +2,7 @@ SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0;
 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='TRADITIONAL';
 
+DROP SCHEMA IF EXISTS `cloauth` ;
 CREATE SCHEMA IF NOT EXISTS `cloauth` DEFAULT CHARACTER SET latin1 ;
 USE `cloauth` ;
 
@@ -10,15 +11,16 @@ USE `cloauth` ;
 -- -----------------------------------------------------
 CREATE  TABLE IF NOT EXISTS `cloauth`.`users` (
   `id` BIGINT NOT NULL AUTO_INCREMENT ,
-  `verifiedemail` VARCHAR(50) CHARACTER SET 'utf8' NOT NULL ,
-  `registrationDate` TIMESTAMP NULL DEFAULT NULL ,
-  `username` VARCHAR(50) NULL ,
-  `firstname` VARCHAR(45) NULL ,
-  `lastname` VARCHAR(45) NULL ,
-  `displayname` VARCHAR(45) NULL ,
+  `verifiedEmail` VARCHAR(50) CHARACTER SET 'utf8' NOT NULL ,
+  `userName` VARCHAR(50) NOT NULL ,
+  `firstName` VARCHAR(45) NULL ,
+  `lastName` VARCHAR(45) NULL ,
+  `displayName` VARCHAR(45) NULL ,
   `roles` VARCHAR(45) NULL COMMENT 'space delim listof roles \ntodo: make this a relation\n\n' ,
-  UNIQUE INDEX `verifiedemail_UNIQUE` (`verifiedemail` ASC) ,
-  PRIMARY KEY (`id`) )
+  `language` VARCHAR(10) NULL DEFAULT 'en-GB' ,
+  UNIQUE INDEX `verifiedemail_UNIQUE` (`verifiedEmail` ASC) ,
+  PRIMARY KEY (`id`) ,
+  UNIQUE INDEX `userName_UNIQUE` (`userName` ASC) )
 ENGINE = InnoDB
 AUTO_INCREMENT = 5
 DEFAULT CHARACTER SET = latin1;
@@ -28,20 +30,18 @@ DEFAULT CHARACTER SET = latin1;
 -- Table `cloauth`.`clients`
 -- -----------------------------------------------------
 CREATE  TABLE IF NOT EXISTS `cloauth`.`clients` (
-  `id` BIGINT NOT NULL AUTO_INCREMENT ,
-  `clientid` VARCHAR(32) NOT NULL ,
-  `clientsecret` VARCHAR(45) NOT NULL ,
-  `orgname` VARCHAR(45) NULL ,
+  `id` VARCHAR(32) NOT NULL ,
+  `clientSecret` VARCHAR(32) NOT NULL ,
+  `orgName` VARCHAR(45) NULL ,
   `description` VARCHAR(128) NULL ,
-  `returnuris` VARCHAR(256) NULL COMMENT 'Space delimited list of registered URIs\n' ,
-  `userid` BIGINT NULL ,
+  `redirectUri` VARCHAR(256) NULL COMMENT 'Space delimited list of registered URIs\n' ,
+  `users_id` BIGINT NOT NULL ,
   PRIMARY KEY (`id`) ,
-  UNIQUE INDEX `clientid_UNIQUE` (`clientid` ASC) ,
-  UNIQUE INDEX `id_UNIQUE` (`id` ASC) ,
+  UNIQUE INDEX `clientid_UNIQUE` (`id` ASC) ,
   CONSTRAINT `fk1`
-    FOREIGN KEY (`userid` )
+    FOREIGN KEY (`users_id` )
     REFERENCES `cloauth`.`users` (`id` )
-    ON DELETE NO ACTION
+    ON DELETE CASCADE
     ON UPDATE CASCADE)
 ENGINE = InnoDB;
 
@@ -50,50 +50,35 @@ ENGINE = InnoDB;
 -- Table `cloauth`.`grant`
 -- -----------------------------------------------------
 CREATE  TABLE IF NOT EXISTS `cloauth`.`grant` (
-  `id` BIGINT NOT NULL ,
-  `clientid` BIGINT NULL ,
-  `userid` BIGINT NULL ,
+  `id` BIGINT NOT NULL AUTO_INCREMENT ,
+  `clients_id` VARCHAR(32) NOT NULL ,
+  `users_id` BIGINT NOT NULL ,
+  `expiry` BIGINT UNSIGNED NULL ,
+  `refreshToken` VARCHAR(32) NULL ,
   PRIMARY KEY (`id`) ,
-  INDEX `fk_grant_1` (`clientid` ASC) ,
-  INDEX `fk_grant_2` (`userid` ASC) ,
-  CONSTRAINT `fk_grant_1`
-    FOREIGN KEY (`clientid` )
-    REFERENCES `cloauth`.`clients` (`id` )
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
+  INDEX `fk_grant_2` (`users_id` ASC) ,
+  UNIQUE INDEX `refreshToken_UNIQUE` (`refreshToken` ASC) ,
+  INDEX `fk_grant_1` (`clients_id` ASC) ,
   CONSTRAINT `fk_grant_2`
-    FOREIGN KEY (`userid` )
+    FOREIGN KEY (`users_id` )
     REFERENCES `cloauth`.`users` (`id` )
     ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
-
-
--- -----------------------------------------------------
--- Table `cloauth`.`tokens`
--- -----------------------------------------------------
-CREATE  TABLE IF NOT EXISTS `cloauth`.`tokens` (
-  `token` VARCHAR(32) NOT NULL ,
-  `grantid` BIGINT NULL ,
-  `expiry` TIMESTAMP NULL ,
-  `tokentype` CHAR(1) NULL ,
-  PRIMARY KEY (`token`) ,
-  INDEX `fk_tokens_1` (`grantid` ASC) ,
-  CONSTRAINT `fk_tokens_1`
-    FOREIGN KEY (`grantid` )
-    REFERENCES `cloauth`.`grant` (`id` )
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_grant_1`
+    FOREIGN KEY (`clients_id` )
+    REFERENCES `cloauth`.`clients` (`id` )
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `cloauth`.`scopes`
+-- Table `cloauth`.`scope`
 -- -----------------------------------------------------
-CREATE  TABLE IF NOT EXISTS `cloauth`.`scopes` (
+CREATE  TABLE IF NOT EXISTS `cloauth`.`scope` (
   `id` INT NOT NULL AUTO_INCREMENT ,
-  `uri` VARCHAR(128) NULL ,
-  `description` VARCHAR(45) NULL ,
+  `uri` VARCHAR(128) NOT NULL ,
+  `description` VARCHAR(128) NULL ,
   PRIMARY KEY (`id`) ,
   UNIQUE INDEX `uri_UNIQUE` (`uri` ASC) ,
   UNIQUE INDEX `id_UNIQUE` (`id` ASC) )
@@ -101,23 +86,23 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `cloauth`.`grant_scopes`
+-- Table `cloauth`.`grant_scope`
 -- -----------------------------------------------------
-CREATE  TABLE IF NOT EXISTS `cloauth`.`grant_scopes` (
-  `grantid` BIGINT NOT NULL ,
-  `scopeid` INT NOT NULL ,
-  PRIMARY KEY (`grantid`, `scopeid`) ,
-  INDEX `fk_grant_scopes_1` (`grantid` ASC) ,
-  INDEX `fk_grant_scopes_2` (`scopeid` ASC) ,
-  CONSTRAINT `fk_grant_scopes_1`
-    FOREIGN KEY (`grantid` )
+CREATE  TABLE IF NOT EXISTS `cloauth`.`grant_scope` (
+  `grant_id` BIGINT NOT NULL ,
+  `scope_id` INT NOT NULL ,
+  PRIMARY KEY (`grant_id`, `scope_id`) ,
+  INDEX `fk_grant_scope_1` (`scope_id` ASC) ,
+  INDEX `fk_grant_scope_2` (`grant_id` ASC) ,
+  CONSTRAINT `fk_grant_scope_1`
+    FOREIGN KEY (`scope_id` )
+    REFERENCES `cloauth`.`scope` (`id` )
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_grant_scope_2`
+    FOREIGN KEY (`grant_id` )
     REFERENCES `cloauth`.`grant` (`id` )
     ON DELETE CASCADE
-    ON UPDATE CASCADE,
-  CONSTRAINT `fk_grant_scopes_2`
-    FOREIGN KEY (`scopeid` )
-    REFERENCES `cloauth`.`scopes` (`id` )
-    ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
 COMMENT = 'join table for finding out which scopes are granted\n\n';
@@ -127,12 +112,3 @@ COMMENT = 'join table for finding out which scopes are granted\n\n';
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
-
--- -----------------------------------------------------
--- Data for table `cloauth`.`users`
--- -----------------------------------------------------
-START TRANSACTION;
-USE `cloauth`;
-INSERT INTO `cloauth`.`users` (`id`, `verifiedemail`, `registrationDate`, `username`, `firstname`, `lastname`, `displayname`, `roles`) VALUES (NULL, 'test@test.com', '', 'test@test.com', 'test', 'tester', 'testy tester', NULL);
-
-COMMIT;

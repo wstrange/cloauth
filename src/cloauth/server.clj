@@ -1,6 +1,5 @@
 (ns cloauth.server
-  (:require [noir.server :as server]
-            [cloauth.models.db :as db])
+  (:require [noir.server :as server])
   (:use korma.db))
 
 
@@ -10,7 +9,6 @@
                   :delimiters "`"
                   :user "cloauth"
                   :password "password"}))
-
 
 
 (server/load-views "src/cloauth/views/")

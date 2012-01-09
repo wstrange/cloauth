@@ -35,7 +35,7 @@
 (def client-links [{:url "/client/register" :text "Register Client"}
                     {:url "/client/admin" :text "Manage Clients"}])
 
-(def main-links [{:url "/oauth2/user/tokens" :text "Authorized Applications" }])
+(def main-links [{:url "/oauth2/user/grants" :text "Authorized Applications" }])
 
 (def all-links (flatten [main-links admin-links client-links]))
 

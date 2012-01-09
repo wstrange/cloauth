@@ -74,7 +74,7 @@
 
 (defn delete-user! [id] (delete users (where {:id id})))
 
-(defn delete-username [userName] (delete users (where {:userName userName})))
+(defn delete-username! [userName] (delete users (where {:userName userName})))
 
 
 (defn all-users [] 
@@ -115,15 +115,12 @@
 (defn clients-owned-by-user-id [id]
   (select clients (where {:users_id id})))
 
-(defn get-client-by-clientId [clientId] 
-  (select clients (where {:id clientId})))
+(defn get-client-by-id [clientId] 
+  (first (select clients (where {:id clientId}))))
 
-(defn get-client-by-id [id]
-  (select clients (where {:id id})))
  
 (defn delete-client! [id]
   (delete clients (where {:id [= id]})))
-
 
 
 ;(defn all-clients [] (select clients))
@@ -162,15 +159,20 @@
             {:grant_id grantId 
              :scope_id (:id s)}))))
 
-(defn new-grant [clientId userId scope-list]
+(defn create-grant [clientId userId scope-list refreshToken]
   "Create a new grant. scopes is a list of scopes granted"
-  (println "Create grant clientid=" clientId " userid=" userId " scopes " scope-list)
-  (let [g (insert grant (values {:clients_id clientId :users_id userId}))
+  (println "Create grant clientid=" clientId " userid=" userId " scopes " scope-list " token " refreshToken)
+  (let [g (insert grant (values {:clients_id clientId :users_id userId :refreshToken refreshToken}))
         gid (:GENERATED_KEY  g)] 
     (doseq [s scope-list] 
       (add-scope-to-grant gid s))))
  
 (defn get-grants [userId]
-  "todo:  get granted clients/ scopes"
-  nil)
+ (select grant (with clients) 
+     (fields :id :clients.orgName :refreshToken :clients.description)
+     (where {:users_id userId})))
 
+
+(defn delete-grant! [id]  
+  (println "delete grant " id)
+  (delete grant (where {:id id})))
