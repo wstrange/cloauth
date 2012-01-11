@@ -28,13 +28,16 @@
                                   :scope "test"}))
              "Test Web server - Auth code flow")
      [:br]
-     (link-to (str "/oauth2/authorize?"
+     (let [uri (str "/oauth2/authorize?"
                   (encode-params {:client_id (testdb/testClientId)
                                   :redirect_uri "/test/redirect"
                                   :response_type "token"
                                   :state "teststate"
-                                  :scope "test"}))
-             "Test two legged oauth flow")
+                                  :scope "test"})) ]
+       
+     [:a {:href  uri 
+          :target "_blank"}
+          "POP UP - Test two legged oauth flow"])
      ]))
 
 ; url that performs login on a test user 
@@ -65,7 +68,9 @@
        [:p "Use code to get an access token"]
        [:p (link-to (str "/test/get-token?code=" code) "Get Access Token")]]
       access_token 
+        [:div 
         [:p "Access Token " access_token " Expires " expires_in ]
+        [:p (link-to (str "/test/resource?access_token=" access_token ) "Make a Test Request")]]
        :else
        [:p "There was an error " (:error req)])))
 

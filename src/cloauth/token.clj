@@ -1,18 +1,18 @@
 (ns cloauth.token
   "Short term token handling - memory based
+
    todo: eventually the implemenation should use some kind
-   of memcache like protocol to cache tokens.
-   Right now this only works in a single instance"
+   of memcache like protocol to cache tokens across server instances.
+   Right now this only works in a single instance of the application"
   )
   
 
-; auth code lifetime - from spec: 10 minutes and ONE TIME use only
-
+; auth code lifetime - from Oauth spec: 10 minutes and ONE TIME use only
 (def authcode-lifetime 10) ; authcode lifetime in minutes
 
 
-; access tokens - up to app -but short lived (1 hour max?)
-; for testing we can make it short
+; access tokens - up to application -but generally short lived (1 hour max?)
+; for testing we can make it really short
 (def default-access-token-expiry-minutes 1)
 
 
@@ -36,28 +36,23 @@
   (msec-to-sec (- future-msec (System/currentTimeMillis) )))
 
 (defn min-to-future-unix-time [min]
-  "minutes to an absolute future UNIX msec time "
+  "calculate the future unix time (msec) that is ahead by min minutes  "
   (+ (System/currentTimeMillis) (* 1000 60 min)))
 
 
 
 (defn purge-code [code]
+  "Called by token generating code to invalidate an auth code. These are one time use only"
   ;(println "Purging code " code)
   (swap! *auth-codes* dissoc code))
 
-
-(defn print-tokens [] 
-  (doseq [code @*auth-codes*]
-    (println "code  =" code)))
-  
 (defn create-auth-code [oauth-request] 
   "Create a new short lived auth code request
    Returns a map which is used as the json response - 
    contains the generated auth code "
   (println "Create Auth Code request = " oauth-request)
   (let  [code (generate-token)
-         t  {:request oauth-request
-             :authcode code ; todo: we can probably get rid of this
+         t  {:request oauth-request ; save the original request
              :expires   ( min-to-future-unix-time authcode-lifetime)}]
        (swap! *auth-codes* assoc code t)
        ;(print-tokens)
@@ -98,27 +93,25 @@
   (get @*access-tokens* token))
 
 (defn time-expired [t]
+  "True if time t is in the past"
   (> (System/currentTimeMillis) t))
-  
-(defn purge-expired-tokens [] 
-  "Remove all access tokens that have expired"
-  (doseq [[t tval] @*access-tokens*] 
+
+(defn- purge-expired [atom] 
+  "Purge any map entries whos :expires value is in the past"
+  (doseq [[t tval] @atom] 
     (if (time-expired (:expires tval))
       (do 
-        (println "token expired " t)
-        (swap! *access-tokens* dissoc t)))))
+        (println "token expired " tval)
+        (swap! atom dissoc t)))))
+  
+(defn purge-expired-tokens [] 
+  "Remove all access tokens and auth codes that have expired"
+  (purge-expired *access-tokens*)
+  (purge-expired *auth-codes* ))
 
-(defn print-access-tokens [] 
-   (doseq [[t tval] @*access-tokens*]
-     (prn "token " t " val" tval)))
-
-(comment
-  "todo - create purge task ")
-
- 
-(defonce purge-task (future 
-                  (loop [] (do 
-                          (purge-expired-tokens)
-                          ;(println "Expire token thread sleeping...." (.getName (Thread/currentThread)))
-                          (Thread/sleep 30000))
-                    (recur ))))
+(defonce purge-task 
+  (future 
+    (while true (do 
+        (purge-expired-tokens)
+        ;(println "Expire token thread sleeping...." (.getName (Thread/currentThread)))
+        (Thread/sleep 30000)))))

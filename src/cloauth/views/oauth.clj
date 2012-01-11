@@ -46,7 +46,6 @@
       ; redirect back to client with Json error response
       (send-redirect request {:error code}))))
   
-
 ;;
 ;; Q: Google uses URL parameters 
 ; http://code.google.com/apis/accounts/docs/OAuth2UserAgent.html
@@ -54,17 +53,23 @@
 
 
 (defn- request-granted [request] 
-  "The user has granted the request "
-  "Remember that the user has granted the request for future"
-  ;(println "request granted req= " request)
-  (db/create-grant (:clientId request)  (:userId request) (:scopes request) (token/generate-token))
+  "The user has granted the request " 
+  
+  (let [clientId (:clientId request) 
+        userId (:userId request)
+        scopes (:scopes request)]
+        
+  ;Remember the users decision so we don't need to re-prompt them in the future"
+  (db/create-grant clientId  userId  scopes (token/generate-token))
    
   (if (= (:responseType request) "token")
      ; token type - 2 legged oauth - we send back an access token - not a code token
-     ; todo 
-     (send-redirect request (token/create-auth-code request))
-     ; else
-     (send-redirect request (token/create-auth-code request))))
+     ; todo does this require JSONP ? So the client JS can parse the fragment
+     ; in this case the callback might be a javascript function to call?
+     ;(resp/json (token/new-access-token clientId userId scopes))
+     (send-redirect request (token/new-access-token clientId userId scopes))
+     ; else - redirect back to web app
+     (send-redirect request (token/create-auth-code request)))))
      
 (defn- request-denied [request] 
    (error-response (merge request {:error_code "access_denied"})))
