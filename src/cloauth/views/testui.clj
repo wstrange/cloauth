@@ -100,7 +100,9 @@
   (common/layout
     [:p "Resource Access Test: access_token=" access_token ]
     (if-let [t (token/get-token-entry access_token)]
-      [:p "Token found (OK),  scope = " (:scope t)]
+      [:div 
+         [:p "Token found (OK)" ]
+         [:p "Scopes = " (str (:scopes t))]]
       ; else
       [:p "Token is invalid"])))
 

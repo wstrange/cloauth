@@ -8,7 +8,8 @@ Token Expiry
     
 client - redirectUri - could be a collection
  
- If a user has previously authorized a client, should we not prompt for authentication again?
+
+ figure out how to manage background tasks 
  
+ implement caching of scope uri lookup 
  
-If a grant has been authorized before we should delete the old entry and update it with the new (scope may have changed)

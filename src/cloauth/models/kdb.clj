@@ -146,6 +146,7 @@
   To do: this data could be cached for performance. No need to look this up on every search"
     (sort (map #(:id (get-scope-id % )) scopes)))
 
+(declare grant)
 
 ; grant_scope - joins set of scopes to a grant
 (defentity grant_scope 
@@ -163,7 +164,7 @@
   "Add a scope e.g. /api/calendar to 
   a grant. A user will grant a set of scopes"
   (println "Add scope " scope " to grantid " grantId)
-  (let [s (get-scope scope)] 
+  (let [s (get-scope-id scope)] 
     (insert grant_scope
          (values
             {:grant_id grantId 
@@ -202,7 +203,7 @@
         grants (get-grant-and-scopes userId clientId)
         gids (map #(:scope_id %) grants)
         sorted-gids (sort gids)]
-    (prn "Check grant scopes" userId clientId sorted-scopes sorted-gids)
+    ;(prn "Check grant scopes" userId clientId sorted-scopes sorted-gids)
     (= sorted-gids sorted-scopes)))
        
 

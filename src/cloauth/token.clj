@@ -7,8 +7,14 @@
   
 
 ; auth code lifetime - from spec: 10 minutes and ONE TIME use only
+
+(def authcode-lifetime 10) ; authcode lifetime in minutes
+
+
 ; access tokens - up to app -but short lived (1 hour max?)
-; 
+; for testing we can make it short
+(def default-access-token-expiry-minutes 1)
+
 
 (def ^:dynamic *auth-codes* (atom {}))
 
@@ -33,7 +39,7 @@
   "minutes to an absolute future UNIX msec time "
   (+ (System/currentTimeMillis) (* 1000 60 min)))
 
-(defonce authcode-lifetime 10) ; authcode lifetime in minutes
+
 
 (defn purge-code [code]
   ;(println "Purging code " code)
@@ -63,7 +69,6 @@
   (get @*auth-codes* code))
   
 
-(defonce default-access-token-expiry-minutes 60)
 
 ; token map - keyed by the access token
 ; values are a map that describe what the token can access 
@@ -90,19 +95,30 @@
 
 
 (defn get-token-entry [token] 
-  "todo" )
+  (get @*access-tokens* token))
 
+(defn time-expired [t]
+  (> (System/currentTimeMillis) t))
+  
+(defn purge-expired-tokens [] 
+  "Remove all access tokens that have expired"
+  (doseq [[t tval] @*access-tokens*] 
+    (if (time-expired (:expires tval))
+      (do 
+        (println "token expired " t)
+        (swap! *access-tokens* dissoc t)))))
+
+(defn print-access-tokens [] 
+   (doseq [[t tval] @*access-tokens*]
+     (prn "token " t " val" tval)))
 
 (comment
-  "todo - create purge task "
-  
-(def purge-task (future 
+  "todo - create purge task ")
+
+ 
+(defonce purge-task (future 
                   (loop [] (do 
                           (purge-expired-tokens)
-                          (println "Expire token thread sleeping...." (.getName (Thread/currentThread)))
-                          (Thread/sleep 90000))
+                          ;(println "Expire token thread sleeping...." (.getName (Thread/currentThread)))
+                          (Thread/sleep 30000))
                     (recur ))))
-
-)
-
-

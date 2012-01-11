@@ -131,13 +131,26 @@
 
 ; Note /client uri - so we can use client authentication instead of user auth
 ; todo: We need a better system...
-; todo: Client auth should be enforced here... 
-; todo: Need to look up the user
-(defpage [:any "/client/token"]  {:keys [client_id client_secret redirect_uri grant_type code] :as req} 
-  ;(println "Token Request " req)
-  (let [oauth-request (oauth/new-token-request client_id client_secret redirect_uri grant_type code)]
-    ;(println "Created request" oauth-request)
-    (resp/json (oauth/handle-oauth-token-client-request oauth-request))))
+
+; Note: some of these keys may be nil as they are not present in all requests
+(defpage [:any "/client/token"]  {:keys [client_id client_secret redirect_uri grant_type code refresh_token] :as req} 
+  (println "Token Endpoint Request " req)
+  (resp/json 
+    (cond 
+      ; todo: Implement this check as an auth filter...
+      (not (oauth/valid-client? client_id client_secret))
+       {:error :unauthorized_client
+        :error_description "Client is not authorized. Bad client id or secret?"}
+              
+      (= grant_type "authorization_code")
+      (oauth/handle-authcode-grant client_id redirect_uri code)
+      
+      (= grant_type "refresh_token") 
+      (oauth/handle-refresh-token-grant client_id refresh_token)
+      
+      :else 
+      {:error :invalid_request :error_description (str "Invalid or missing grant type=" grant_type)})))
+
  
 
 (defpage "/oauth2/error" {:keys [error]  :as request}

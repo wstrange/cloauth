@@ -26,23 +26,21 @@
 
 ; "Check" protocols - returns :error_code/:error_description set or nil if everything is OK
 
-(defn- check-valid-client-id [oauth-request] 
+(defn- check-valid-client-id [clientId] 
   "Make sure the client id is valid"
-       (if-not (db/get-client-by-id (:clientId oauth-request))
-                {:error_code :redirectUriInvalid 
+       (if-not (db/get-client-by-id clientId)
+                {:error :unauthorized_client
                  :error_description "Bad client id"}))
 
 ; todo: we may have more than one redirect uri....
-(defn- check-valid-redirectUri [oauth-request] 
+(defn- check-invalid-redirectUri [clientId uri] 
   "Make sure the redirect URI is registered" 
-  (let [client (db/get-client-by-id (:clientId oauth-request))
-        clientUris (:redirectUri client)
-        uri (:redirectUri oauth-request)]
+  (let [client (db/get-client-by-id clientId)
+        clientUris (:redirectUri client)]
          (if-not (or (= uri clientUris)
                      (some uri clientUris))
-           {:error_code :invalid_request 
-            :error_description "Redirect URI is not registered"})))
-  
+           {:error :invalid_request 
+            :error_description "Redirect URI is not registered to this client"})))
   
 (defn request-already-approved? [oauth-request] 
   "true if a request has been previously approved . 
@@ -59,7 +57,7 @@
   (validate [this] 
      (merge this 
       (or 
-        (check-valid-client-id this)))))
+        (check-valid-client-id (:clientId this))))))
 
 (defn new-oauth-request [clientId userId responseType redirectUri scope state access_type] 
   "Create a new OAuth AuthZ request. Runs validation on the request and return the result
@@ -79,10 +77,6 @@
     {:error_code :unauthorized_client
      :error_description "Client is not authorized"}))
 
-(defn- check-grantType [grantType] 
-  (if (not= grantType "authorization_code") 
-    {:error_code :invalidrequest
-     :error_description "Grant type must be authorization_code"}))
 
 (defn- check-authCode [clientId code]
   "Check that the auth code for the request is in fact valid "
@@ -101,21 +95,6 @@
 ; Token Handling
 
 
-(defrecord TokenRequest[clientId clientSecret redirectUri  grantType  code ]
-  ValidateRequestProtocol 
-  (validate [this]
-            (assoc this :errors 
-              (merge   ; todo: should we return multiple errors?
-                (check-client-id-secret clientId clientSecret)
-                (check-grantType grantType)
-                (check-authCode clientId code )))))
-
-
-(defn new-token-request [clientId clientSecret redirectUri grantType code]
-  "Create a new validated token request
-   If the token is not valid the :errors map will be set"
-  (validate (TokenRequest. clientId clientSecret redirectUri grantType  code)))
-
 (defn- msec-to-sec [msec] 
   "Convert msec to seconds"
   (int (/ msec 1000)))
@@ -124,36 +103,39 @@
   "Given a time in the future (msec) calculate 
    the remain time in seconds"
   (msec-to-sec (- future-msec (System/currentTimeMillis) )))
-
-
-
-
-(comment )
-(defn handle-oauth-token-client-request [request] 
-  "Handle an token request made by a client (not a user). 
-   At this point validation has already been run on the request
-   i.e.: The client id is valid ...
-   Return a map that will be converted into JSON response
-   request - Token request
-   "
-  (println "Token request " request)
-  (if (has-error? request)
-    {:error (:error_code request) 
-     :error_description (:error_description request)}
-    ; else
-    (let [clientId (:clientId request)
-          code (:code request)
-          authEntry (token/get-authcode-entry code)
-          oauthRequest (:request authEntry)
-          userId (:userId oauthRequest)
-          scopes (:scopes oauthRequest)
-          response (token/new-access-token clientId userId scopes) ]
+  
+  
+; Handle an authorization code grant 
+; The client is asking to exchange an auth code for an access token and refresh token 
+; returns a map that gets turned into a json response
+(defn handle-authcode-grant [clientId redirectUri code ]   
+  (let [authEntry (token/get-authcode-entry code)
+        oauthRequest (:request authEntry)
+        originalClientId (:clientId oauthRequest)
+        userId (:userId oauthRequest)
+        scopes (:scopes oauthRequest)
+        badRedirect (check-invalid-redirectUri clientId redirectUri)]
+    
+    (cond 
+      ; no matching auth entry ? Might have expired or it is bogus...
+      (nil? authEntry) 
+      {:error :access_denied}
+        
+      ; badredirect URL true ? return that error
+      badRedirect badRedirect
       
-      (token/purge-code code) ; one time use only
-     
-      ; return the json response
-      response
-      )))
+      (not= originalClientId clientId)
+      {:error :access_denied :error_description "Client Id does not match original request"}
+      
+      :else
+      (do 
+         (token/purge-code code) ; one time use only 
+         ; return new access token
+         (token/new-access-token clientId userId scopes)))))
+
+(defn handle-refresh-token-grant [request]  
+  {:error "not done!"})
+
 
 
 (defn handle-oauth-token-user-request [oauthrequest] 
