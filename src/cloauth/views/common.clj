@@ -17,8 +17,7 @@
                :jsapi (include-js "https://ajax.googleapis.com/jsapi")
               })
 
-; 
-
+; create the page <head>
 (defpartial build-head [incls scripts]
             [:head
              [:meta {:charset "utf-8"}]
@@ -55,7 +54,7 @@
    [:h5 "My Apps"]
    [:ul (map #(link-item %) main-links)]]])
 
-;; Display the logged in user name or a login link
+;; Display the user name or a login link if the user has not logged in
 ; The chooser div will get a GIT Sign in Button inserted via Javascript
 (defpartial logged-in-status [] 
   (let [u (db/current-userName)]
@@ -82,10 +81,6 @@
     (build-head [:bootstrap :jquery :jquery-ui :jsapi :google-apis] [:git-load :git-init])))
 
 ;; Layouts
-
-;(defpartial layout-with-header [header & content]
-;  (layout content))
-
 
 ; Layout with an include map for optional css / js
 (defpartial layout-with-includes [ {:keys [css js]} & content]

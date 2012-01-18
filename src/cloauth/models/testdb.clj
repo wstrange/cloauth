@@ -11,7 +11,7 @@
 (defn orgname [user]  (str "Company-" user))
 
 (defn create-sample-data [uname]
-  (insert db/scope (values {:uri "test" :description "Test Scope"}))
+  (insert db/scopes (values {:uri "test" :description "Test Scope"}))
   (let [userId   (db/insert-user! {:userName uname :verifiedEmail uname})
         clientId (db/insert-client! 
                    (db/new-client (orgname uname)
@@ -25,15 +25,20 @@
 
 
 (defn nuke-it [] 
-  (delete db/scope )
+  (delete db/scopes )
   (delete db/clients)
   (delete db/users))
 
 (defn testUserId [] (:id (db/get-user testUser)))
-(defn testClientId [] (:id (first (db/clients-owned-by-user-id (testUserId)))))
+(defn testClientId [] (:clientId (first (db/clients-owned-by-user-id (testUserId)))))
     
+
+
 (def ids 
-  (try (create-sample-data testUser)
+  
+  (try (do
+         (nuke-it)
+         (create-sample-data testUser))
     (catch Exception e (prn e))))
 
 

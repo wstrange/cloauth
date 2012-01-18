@@ -28,14 +28,14 @@
 
 (defn- check-valid-client-id [clientId] 
   "Make sure the client id is valid"
-       (if-not (db/get-client-by-id clientId)
+       (if-not (db/get-client-by-clientId clientId)
                 {:error :unauthorized_client
                  :error_description "Bad client id"}))
 
 ; todo: we may have more than one redirect uri....
 (defn- check-invalid-redirectUri [clientId uri] 
   "Make sure the redirect URI is registered" 
-  (let [client (db/get-client-by-id clientId)
+  (let [client (db/get-client-by-clientId clientId)
         clientUris (:redirectUri client)]
          (if-not (or (= uri clientUris)
                      (some uri clientUris))
@@ -68,7 +68,7 @@
  
 (defn valid-client? [id secret]
   "Check to see that client has a valid id and secret"
-  (if-let [client  (db/get-client-by-id id)]
+  (if-let [client  (db/get-client-by-clientId id)]
     (= secret (:clientSecret client))))
 
 (defn- check-client-id-secret [id secret]

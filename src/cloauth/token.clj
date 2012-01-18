@@ -7,11 +7,11 @@
   )
   
 
-; auth code lifetime - from Oauth spec: 10 minutes and ONE TIME use only
+; auth code lifetime - from OAuth spec: 10 minutes and ONE TIME use only
 (def authcode-lifetime 10) ; authcode lifetime in minutes
 
 
-; access tokens - up to application -but generally short lived (1 hour max?)
+; access token lifetime - up to application -but generally short lived (1 hour max?)
 ; for testing we can make it really short
 (def default-access-token-expiry-minutes 1)
 
@@ -63,7 +63,6 @@
   exist. "
   (get @*auth-codes* code))
   
-
 
 ; token map - keyed by the access token
 ; values are a map that describe what the token can access 

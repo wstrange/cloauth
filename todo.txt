@@ -9,7 +9,9 @@ Token Expiry
 client - redirectUri - could be a collection
  
 
- figure out how to manage background tasks 
- 
- implement caching of scope uri lookup 
+
+implement caching of scope uri lookup 
+
+/user/profile management
+
  

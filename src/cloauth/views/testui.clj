@@ -76,8 +76,8 @@
 
 ; Show the result of exchanging a auth code for a token
 (defpage "/test/get-token" {:keys [code]}
-  (let [client (db/get-client-by-id (testdb/testClientId))
-        id (:id client)
+  (let [client (db/get-client-by-clientId (testdb/testClientId))
+        id (:clientId client)
         secret (:clientSecret client)
         params {:code  code 
                 :grant_type "authorization_code"

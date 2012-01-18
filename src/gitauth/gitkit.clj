@@ -30,8 +30,7 @@
 (def git-params-json (json/generate-string gitkit-params))
 
 
-; Define any scripts 
-; These are needed by GIT. The api page will show you how to generate these
+; Define scripts that are needed by GIT. See the GIT docs
 ; The script generates a Sign In button that is inserted in the "chooser" div
 (def javascripts {:git-load (javascript-tag " google.load('identitytoolkit', '1', {packages: ['ac']});")
                   :git-init (javascript-tag (str "$(function(){window.google.identitytoolkit.setConfig(" 

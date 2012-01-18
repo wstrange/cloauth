@@ -106,7 +106,7 @@
   ;(prn "OAuth request " oauth-request )
   (session/flash-put! oauth-request)
   (let [clientId (:clientId oauth-request)       
-        client (db/get-client-by-id clientId)]
+        client (db/get-client-by-clientId clientId)]
     (common/layout
       [:h2 "Approve Application Access Request"]
       [:h4 "Organization Requesting Access: " (:orgName client)]
@@ -166,6 +166,7 @@
 
 ; Display an auth token 
 (defpartial display-grant [grant]
+  (println "display grant " grant)
     [:tr
       [:td  (:orgName grant)]
       [:td (:description grant)]

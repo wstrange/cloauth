@@ -51,7 +51,7 @@
     [:td (:userName clientRec)]
     [:td (:orgName clientRec)]
     [:td (:description clientRec)]
-    [:td (:id clientRec) [:br] (:clientSecret clientRec)]
+    [:td (:clientId clientRec) [:br] (:clientSecret clientRec)]
     
     [:td (link-to (str "/client/admin/delete?id=" (:id clientRec)) "delete")]])
   

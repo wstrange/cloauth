@@ -23,9 +23,8 @@
 
 (defn please-login [uri]
   "Handle attempt to access restricted page "
-  (println "Restricted page " uri)
-  (session/flash-put! "You must login first!")
-                       (resp/redirect "/login"))
+  ;(println "Restricted page " uri)
+  (session/flash-put! "You must login first!") (resp/redirect "/login"))
   
 ; the user must be authenticated to request a protected uri 
 (pre-route [:any "/*"] {:keys [uri] :as req} 

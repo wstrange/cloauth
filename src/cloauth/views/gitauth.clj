@@ -1,6 +1,5 @@
 (ns cloauth.views.gitauth
-"Authentication Functions for log in
-This uses the Google Identity Toolkit (GIT)
+"Authentication Functions for log in using the Google Identity Toolkit (GIT)
 See http://code.google.com/apis/identitytoolkit/v1/acguide.html
 "
   (:require [cloauth.views.common :as common]
@@ -20,18 +19,11 @@ See http://code.google.com/apis/identitytoolkit/v1/acguide.html
         hiccup.form-helpers))
 
 
-;; Auth check routes
-;; TODO: 
-
-
-;; Google Identity Toolkit (GIT) Integration
-
 
 ; GIT will post back to query to see if this user is already registered
-; Should return a json response of {"registered" :true/false } as appropriate 
+; We return a json response of {"registered" :true/false } as appropriate 
 (defpage [:post "/authn/userstatus"] {:keys [email]} 
-  (println "/userstatus check" email)
-  
+  ;(println "/userstatus check" email)
   (resp/json {:registered (kdb/is-registered? email)}))
 
 
@@ -45,7 +37,7 @@ See http://code.google.com/apis/identitytoolkit/v1/acguide.html
 ; "OK" - user entered password correctly
 ; "passwordError" - password incorrect
 ;
-; Since we don't use passwords this is a no-op
+; Since we don't use passwords this is a no-op for us
 ; TODO: Should we return an error?
 (defpage [:post "/authn/logincheck"] {:keys [email password]}
   (println "/logincheck " email " pw=" password)
