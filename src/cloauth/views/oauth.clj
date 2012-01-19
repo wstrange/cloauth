@@ -134,11 +134,11 @@
 ; Token Endpoint 
 ; 
 
-; Note /client uri - so we can use client authentication instead of user auth
+; Note /oauthclient/* uri - so we can use client authentication instead of user auth
 ; todo: We need a better system...
 
 ; Note: some of these keys may be nil as they are not present in all requests
-(defpage [:any "/client/token"]  {:keys [client_id client_secret redirect_uri grant_type code refresh_token] :as req} 
+(defpage [:any "/oauthclient/token"]  {:keys [client_id client_secret redirect_uri grant_type code refresh_token] :as req} 
   (println "Token Endpoint Request " req)
   (resp/json 
     (cond 
@@ -156,6 +156,17 @@
       :else 
       {:error :invalid_request :error_description (str "Invalid or missing grant type=" grant_type)})))
 
+; Validate an access token 
+(defpage [:any "/oauthclient/validate"]  {:keys [client_id client_secret access_token]}
+  (println "Validate Token")
+  (resp/json  {:todo "todo"}))
+
+; Use a refresh token to get a new access token 
+; Happens (for ex) when an access token expires
+(defpage [:any "/oauthclient/refresh"] {:keys [client_id client_secret refresh_token]}
+  (println "Refresh access token ")
+  (resp/json {:todo "toodo"}))
+              
  
 
 (defpage "/oauth2/error" {:keys [error]  :as request}

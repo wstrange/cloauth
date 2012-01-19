@@ -1,4 +1,5 @@
 (ns cloauth.views.client 
+  "Cliet
   (:require [noir.response :as resp]
              [noir.session :as session]
              [cloauth.views.common :as common]
@@ -9,29 +10,13 @@
         hiccup.form-helpers))
 
 
-(defn- mktext [keyval text] 
-  [:div.clearfix
-    (label keyval text) 
-   [:div.input  
-   (text-field {:class "large" :size "40" } keyval text)]])
- 
-; todo - move these to util
-(defpartial simple-post-form [url form-map]
-  (form-to [:post url] 
-           [:fieldset
-           
-             (map #(mktext (key %) (val %)) form-map)
-           [:div.actions
-            [:button.btn.primary "Submit"]
-            [:button.btn {:type "reset"} "Cancel"]]]))
-
 ;; Client registration 
 
 (defpage "/client/register"  {:as req}
   (common/layout 
       [:p "Register New Client" ]
      [:div
-      (simple-post-form "/client/register" 
+      (common/simple-post-form "/client/register" 
                       {:orgName "Organization Name"
                        :description "Description"
                        :redirectUrl "Redirect URL"})]))

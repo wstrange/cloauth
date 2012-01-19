@@ -1,7 +1,8 @@
 (ns cloauth.views.common
   (:use noir.core
         hiccup.core
-        hiccup.page-helpers)
+        hiccup.page-helpers
+         hiccup.form-helpers)
   (:require [cloauth.models.kdb :as db]
             [gitauth.gitkit :as gitkit]
             ))
@@ -59,7 +60,7 @@
 (defpartial logged-in-status [] 
   (let [u (db/current-userName)]
   (if u  ; If user logged in?
-    [:span (link-to "/profile" u) " -" (link-to "/authn/logout" "Logout")]
+    [:span (link-to "/user/profile" u) " -" (link-to "/authn/logout" "Logout")]
     [:div#chooser "Login"])))
 
 ; Top mast header
@@ -103,3 +104,19 @@
   ;(prn "Layout " content)
   (layout-with-includes {}, content))
                               
+
+(defn- mktext [keyval text] 
+  [:div.clearfix
+    (label keyval keyval) 
+   [:div.input  
+   (text-field {:class "large" :size "40" } keyval text)]])
+ 
+; 
+(defpartial simple-post-form [url form-map]
+  (form-to [:post url] 
+           [:fieldset
+           
+             (map #(mktext (key %) (val %)) form-map)
+           [:div.actions
+            [:button.btn.primary "Submit"]
+            [:button.btn {:type "reset"} "Reset"]]]))

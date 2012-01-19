@@ -84,7 +84,7 @@
                 :client_id  id
                 :client_secret secret
                 :redirect_uri (:redirectUri client)}
-        result (http/post (mk-url "/client/token" )
+        result (http/post (mk-url "/oauthclient/token" )
                           {:form-params params  
                            :content-type :json
                            :basic-auth [id secret]})]

@@ -13,13 +13,12 @@
 (defn create-sample-data [uname]
   (insert db/scopes (values {:uri "test" :description "Test Scope"}))
   (let [userId   (db/insert-user! {:userName uname :verifiedEmail uname})
-        clientId (db/insert-client! 
-                   (db/new-client (orgname uname)
+        client   (db/new-client (orgname uname)
                         "Purveyor of Fine Widgets"
                         "/test/redirect" 
-                        userId))
-        xx  (println "Client id" clientId)
-        grant (db/create-grant clientId userId ["test"] "dummyrefreshtoken")]
+                        userId)
+        clientId (db/insert-client! client)
+        grant (db/create-grant (:clientId client) userId ["test"] "dummyrefreshtoken")]
     (println "Client id=" clientId)
     {:clientId clientId :userId userId}))
 

@@ -74,7 +74,7 @@
 
 
 (defn update-user! [query fields]
-  "Update the user specifie with query with newobj"
+  "Update the user specified with query with newobj"
   (update users (where query) (set-fields fields)))
 
 (defn delete-user! [id] (delete users (where {:id id})))

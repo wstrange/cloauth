@@ -1,4 +1,5 @@
-(ns cloauth.views.admin
+(ns cloauth.views.user
+  "User Managment views "
    (:require [cloauth.views.common :as common]
             [cloauth.models.kdb :as db]
             [cloauth.util :as util]
@@ -35,14 +36,12 @@
 ;; Admin Pages
 
 
-(defpage "/admin" []
+(defpage "/admin/user" []
    (common/layout
      [:h1 "Admin Page"]
      [:p "Curent Users"]
      [:ul.items 
-      (map user-item (db/all-users)) ] 
-    
-     (link-to "/admin/createdata" "create sample data")))
+      (map user-item (db/all-users)) ] ))
 
 
 (defpage "/admin/user/edit" {:keys [u]}
@@ -72,6 +71,29 @@
 (defpage "/admin/user/remove" {:keys [user]}
   (println "removing" user)
   (db/delete-username! {:userName user})
-  (resp/redirect "/admin"))
+  (resp/redirect "/admin/user"))
 
+;; User profile pages
+(defpage "/user/profile" []
+  (let [u (db/current-user-record) ] 
+    (common/layout 
+      [:p "Update your profile " ]
+      [:div
+        (common/simple-post-form "/user/profile" 
+                      {:displayName (:displayName u) 
+                       :firstName (:firstName u) 
+                       :lastName (:lastName u)
+                       ;:verifiedEmail (:verifiedEmail u)
+                       })]
+      [:p (link-to "/" "Home")])))
 
+(defpage [:post "/user/profile"] {:keys [firstName lastName displayName] }
+  (let [updates {:firstName firstName
+                 :lastName lastName
+                  :displayName displayName}
+        newu (merge (db/current-user-record) updates)]
+    (println "new record " newu)
+    (db/update-user! {:id (db/current-userId)} updates)
+    (db/login! newu))
+  (resp/redirect "/user/profile"))
+    
