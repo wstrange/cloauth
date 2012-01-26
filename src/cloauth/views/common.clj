@@ -28,7 +28,7 @@
               [:style {:type "text/css"}  "body { padding-top: 60px;}  "]
              ])
 
-(def admin-links [{:url "/admin" :text "Admin/Main"}
+(def admin-links [{:url "/admin/user" :text "Admin/Main"}
                   {:url "/test" :text "Test Page"}
                 ])
 

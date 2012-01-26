@@ -12,6 +12,7 @@ client - redirectUri - could be a collection
 
 implement caching of scope uri lookup 
 
-/user/profile management
+Remember original request on redirect to login page
 
+client: Edit client, edit redirect URL
  

@@ -1,5 +1,5 @@
 (ns cloauth.views.client 
-  "Cliet
+  "Client Views"
   (:require [noir.response :as resp]
              [noir.session :as session]
              [cloauth.views.common :as common]
