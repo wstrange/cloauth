@@ -30,10 +30,13 @@
 
 (server/load-views "src/cloauth/views/")
 
+(def port  (or 
+             (if-let [p (System/getenv "PORT")]
+               (Integer/parseInt p)
+               8080)))
 
 (defn -main [& m]
-  (let [mode (keyword (or (first m) :dev))
-        port (Integer. (get (System/getenv) "PORT" "8080"))]
+  (let [mode (keyword (or (first m) :dev))]
     (server/start port {:mode mode
                         :ns 'cloauth})))
 
