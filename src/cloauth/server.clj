@@ -63,7 +63,7 @@
 (println "Port " port)
 
 (server/load-views "src/cloauth/views/")
-
+port
 (println "Views loaded")
 
 (defn -main [& m]
@@ -73,6 +73,6 @@
                         :ns 'cloauth})))
 
 ; For dev - start server on load
-;(-main)
+(-main)
 
 
