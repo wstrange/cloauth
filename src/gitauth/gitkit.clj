@@ -6,7 +6,7 @@
             [clj-json.core :as json]))
 
 
-; Get our google API key stored on disk or in an environment var 
+; Get our google API key stored on disk or in an environment var (heroku)
 (def apikey 
   (or (System/getenv "GOOGLE_API_KEY")
     (slurp "api-key")))

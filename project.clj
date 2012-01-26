@@ -13,5 +13,5 @@
                            ; mysql 
                            ;[mysql/mysql-connector-java "5.1.18"]
                             ]
-            :dev-dependencies [[lein-eclipse "1.0.0"]]
-            :main cloauth.server)
+            :dev-dependencies [[lein-eclipse "1.0.0"]])
+            ;:main cloauth.server)

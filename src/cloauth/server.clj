@@ -73,6 +73,6 @@ port
                         :ns 'cloauth})))
 
 ; For dev - start server on load
-(-main)
+;(-main)
 
 
