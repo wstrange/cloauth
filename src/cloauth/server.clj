@@ -26,8 +26,7 @@
 (defdb db db-params)
 
 (println "Db defined " db)
-
-
+(println "DB params " db-params)
 
 (def port (Integer. (get (System/getenv) "PORT" "8080")))
                  
