@@ -6,8 +6,10 @@
             [clj-json.core :as json]))
 
 
-; Get our google API key stored on disk
-(def apikey (slurp "api-key"))
+; Get our google API key stored on disk or in an environment var 
+(def apikey 
+  (or (System/getenv "GOOGLE_API_KEY")
+    (slurp "api-key")))
 
 ;; Google Git parameters for this app
 ;; You can figure these out by going to your google api console and having it generate 
