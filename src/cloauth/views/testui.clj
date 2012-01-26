@@ -4,7 +4,7 @@
             [cloauth.models.testdb :as testdb] 
             [cloauth.views.common :as common]
             [noir.response :as resp]
-            
+            [noir.request :as request]
             [clj-http.client :as http])
    (:use noir.core
         hiccup.core
@@ -49,13 +49,17 @@
 (defpage "/test/sampledata" []
   (resp/redirect "/"))
 
+; create a url for making a http/ request
+; todo: we should pr
 (defn- mk-url [path]
-  (str "http://localhost:8080" path))
+  (let [headers (:headers (request/ring-request))
+        host (headers "host")]
+    (println "h=" headers)
+    (str "http://" host path)))
 
 ;; testing code 
 
 ; Pretend to be a client making an oauth Authorization request 
-
 
 
 ; Redirect callback URL for testing purposes
@@ -75,7 +79,7 @@
        [:p "There was an error " (:error req)])))
 
 ; Show the result of exchanging a auth code for a token
-(defpage "/test/get-token" {:keys [code]}
+(defpage "/test/get-token" {:keys [code] :as req}
   (let [client (db/get-client-by-clientId (testdb/testClientId))
         id (:clientId client)
         secret (:clientSecret client)
@@ -84,7 +88,9 @@
                 :client_id  id
                 :client_secret secret
                 :redirect_uri (:redirectUri client)}
-        result (http/post (mk-url "/oauthclient/token" )
+        url  (mk-url "/oauthclient/token")
+        xx (println url)
+        result (http/post url
                           {:form-params params  
                            :content-type :json
                            :basic-auth [id secret]})]
