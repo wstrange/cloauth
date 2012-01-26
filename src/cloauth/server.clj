@@ -10,18 +10,23 @@
                   :user "cloauth"
                   :password "password"})))
 
-(def db-params {:classname "org.postgresql.Driver"
-          :subprotocol "postgresql"
-          :subname "//localhost:5432/cloauth"
-          :user "cloauth"
-          :password "password"})
-  
+
+
+(def db-params 
+  (merge {:classname "org.postgresql.Driver"
+          :subprotocol "postgresql"}
+         (if-let [url (System/getenv "DATABASE_URL")]
+           {:subname url}
+           ; else
+           {:user "cloauth"
+            :subname "//localhost:5432/cloauth"
+            :password "password"})))
+ 
+ 
 (defdb db db-params)
-  (comment {:classname  "org.postgresql.Driver"
-           :user "cloauth"
-           :password "password"
-           :subprotocol "postgresql"
-           :subname (get (System/getenv) "DATABASE_URL" "//localhost:5432/cloauth")})                
+
+(println "Db defined " db)
+                 
 
 (server/load-views "src/cloauth/views/")
 
