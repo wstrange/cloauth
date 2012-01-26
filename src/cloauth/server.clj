@@ -26,14 +26,17 @@
 (defdb db db-params)
 
 (println "Db defined " db)
-                 
-
-(server/load-views "src/cloauth/views/")
 
 (def port  (or 
              (if-let [p (System/getenv "PORT")]
                (Integer/parseInt p)
                8080)))
+                 
+(println "Port " port)
+
+(server/load-views "src/cloauth/views/")
+
+
 
 (defn -main [& m]
   (let [mode (keyword (or (first m) :dev))]
