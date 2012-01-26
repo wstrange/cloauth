@@ -68,7 +68,7 @@
 
 (defn -main [& m]
   (let [mode (keyword (or (first m) :dev))]
-    (println "Starting on " port)
+    (println "Starting on " port  " arguments " m)
     (server/start port {:mode mode
                         :ns 'cloauth})))
 
