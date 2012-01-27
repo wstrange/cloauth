@@ -11,12 +11,19 @@
   (or (System/getenv "GOOGLE_API_KEY")
     (slurp "api-key")))
 
+; todo: find out a better way of doing this..
+(def deploy-url
+  (if (System/getenv "GOOGLE_API_KEY")
+    "http://cloauth.herokuapp.com"
+    ; else
+    "http://localhost:8080"))
+    
 ;; Google Git parameters for this app
 ;; You can figure these out by going to your google api console and having it generate 
 ;; the Javascript login widget code
 (def gitkit-params {:developerKey apikey
                     :companyName "Noir Test"
-                    :callbackUrl "http://localhost:8080/authn/callback"
+                    :callbackUrl (str deploy-url "/authn/callback")
                     :realm ""
                     :userStatusUrl "/authn/userstatus"
                     :loginUrl "/authn/login"
