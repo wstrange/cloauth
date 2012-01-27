@@ -60,11 +60,9 @@
 
 (def port (Integer. (get (System/getenv) "PORT" "8080")))
                  
-(println "Port " port)
 
 (server/load-views "src/cloauth/views/")
-port
-(println "Views loaded")
+
 
 (defn -main [& m]
   (let [mode (keyword (or (first m) :dev))]
@@ -74,5 +72,4 @@ port
 
 ; For dev - start server on load
 ;(-main)
-
 

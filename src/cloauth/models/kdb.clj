@@ -200,18 +200,18 @@
      (fields :id :clients.orgName :refreshToken :clients.description)
      (where {:user_id userId})))
 
-
 (defn get-grant-and-scopes [userId clientId]
   "get the list of scopes for the user for a given client
    returns nil (if there is no grant) or a sequence of map entries where :scope_id carries the scope"
   (println "Get grant and scopes for uid = " userId "client id=" clientId) 
   ; todo: figure out sql magic to do this in one join
-  (let [cid (:id (select clients (where {:clientId clientId})))]            
+  (let [client (get-client-by-clientId clientId)
+        cid (:id client)]  
+    (println "Getting grant scopes for clientId " cid)
     (select grant_scope  (with grants) 
           (where (and 
                    {:grant_id :grants.id }
                    {:grants.user_id userId :grants.client_id cid})))))
-
 
 (defn grant-scopes-are-the-same [userId clientId scopes]
   "Given a set of scopes, return true if there is an existing grant for the user/client that grants the same set of scopes"
@@ -220,7 +220,7 @@
         grants (get-grant-and-scopes userId clientId)
         gids (map #(:scope_id %) grants)
         sorted-gids (sort gids)]
-    ;(prn "Check grant scopes" userId clientId sorted-scopes sorted-gids)
+    (prn "Check grant scopes" userId clientId sorted-scopes sorted-gids "grants=" grants)
     (= sorted-gids sorted-scopes)))
        
 
