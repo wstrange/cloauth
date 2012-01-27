@@ -7,7 +7,7 @@
                            [org.clojure/data.json "0.1.1"]
                            [lobos "1.0.0-SNAPSHOT"]
                            ; for rdb 
-                           [korma "0.3.0-alpha12"]
+                           [korma "0.3.0-alpha13"]
                            ; postgres
                            [postgresql/postgresql "9.1-901.jdbc4"]
                            ; mysql 

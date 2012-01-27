@@ -25,7 +25,6 @@
             :subname "//localhost:5432/cloauth"
             :password "password"}))))
 
-
  
 (defn heroku-db
   "Generate the db map according to Heroku environment when available."

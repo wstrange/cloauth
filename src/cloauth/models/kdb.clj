@@ -201,17 +201,17 @@
      (where {:user_id userId})))
 
 (defn get-grant-and-scopes [userId clientId]
-  "get the list of scopes for the user for a given client
-   returns nil (if there is no grant) or a sequence of map entries where :scope_id carries the scope"
-  (println "Get grant and scopes for uid = " userId "client id=" clientId) 
-  ; todo: figure out sql magic to do this in one join
-  (let [client (get-client-by-clientId clientId)
-        cid (:id client)]  
-    (println "Getting grant scopes for clientId " cid)
+  "Given a user id (id in user table, not the users email) and a
+   clientId (the long string - NOT the id surrogate key) look up the grant and associated scopes if any"
+    (println "Get grant scopes for uid = " userId "client id=" clientId) 
     (select grant_scope  (with grants) 
           (where (and 
                    {:grant_id :grants.id }
-                   {:grants.user_id userId :grants.client_id cid})))))
+                   {:grants.user_id userId
+                    :grants.client_id
+                        (subselect clients (fields :id) 
+                                   (where {:clientId clientId}))}))))
+                  
 
 (defn grant-scopes-are-the-same [userId clientId scopes]
   "Given a set of scopes, return true if there is an existing grant for the user/client that grants the same set of scopes"
@@ -223,14 +223,6 @@
     (prn "Check grant scopes" userId clientId sorted-scopes sorted-gids "grants=" grants)
     (= sorted-gids sorted-scopes)))
        
-
-(defn get-grant-for-clientIdXXXXWTF?? [userId clientId]
-  "Get the specific grant a user made for a client or nil if no such grant exists. There will never be more than one grant"
-  "return the grant id and a set of scopes granted"
-  (select scopes 
-      (fields :uri)
-      (where {:user_id userId :client_id clientId})))
-   
 
 (defn delete-grant! [id]  
   (println "delete grant " id)
