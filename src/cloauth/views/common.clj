@@ -59,7 +59,6 @@
      [:h5 title]
      [:ul (menu-items links)]]))
                           
-
 ; Navigation Side bar
 (defpartial nav-content []
   [:div.sidebar
@@ -67,7 +66,7 @@
     (render-menu admin-menu)
     (render-menu test-menu)
     (render-menu client-menu)
-    (render-menu main-menu)]])
+    (render-menu apps-menu)]])
 
 
 ;; Display the user name or a login link if the user has not logged in
