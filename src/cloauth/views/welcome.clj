@@ -9,7 +9,7 @@
          (common/layout
            [:h3 "OAuth AZ Server"]
            [:p "Welcome"]
-           [:p (session/flash-get)]))
+           [:p "This is an experimental OAuth provider written in Clojure"]))
 
 ;; Todo - check for continuing request redirect
 (defpage "/welcome" []

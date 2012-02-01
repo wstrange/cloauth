@@ -12,7 +12,7 @@
 
 (defn create-sample-data [uname]
   (insert db/scopes (values {:uri "test" :description "Test Scope"}))
-  (let [userId   (db/insert-user! {:userName uname :verifiedEmail uname})
+  (let [userId   (db/insert-user! {:userName uname :verifiedEmail uname :roles [:admin]})
         client   (db/new-client (orgname uname)
                         "Purveyor of Fine Widgets"
                         "/test/redirect" 
@@ -24,9 +24,9 @@
 
 
 (defn nuke-it [] 
-  (delete db/scopes )
   (delete db/clients)
-  (delete db/users))
+  (delete db/users)
+  (delete db/scopes ))
 
 (defn testUserId [] (:id (db/get-user testUser)))
 (defn testClientId [] (:clientId (first (db/clients-owned-by-user-id (testUserId)))))

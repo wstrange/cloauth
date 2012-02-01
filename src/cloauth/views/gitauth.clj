@@ -11,7 +11,7 @@ See http://code.google.com/apis/identitytoolkit/v1/acguide.html
             [noir.request :as request]
             [clojure.string :as string]  
             [clj-http.client :as client]
-            [clj-json.core :as json]
+            [cheshire.core :as json]
             [gitauth.gitkit :as gitkit])
   (:use noir.core
         hiccup.core

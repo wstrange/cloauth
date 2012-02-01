@@ -21,4 +21,10 @@
   (let [cname (-> (->> ptable name butlast (apply str))
                   (str "_id")
                   keyword)]
-    (integer table cname [:refer ptable :id :on-delete :set-null])))
+    (integer table cname [:refer ptable :id :on-delete :cascade])))
+
+(defn refer-to-nocascade [table ptable]
+  (let [cname (-> (->> ptable name butlast (apply str))
+                  (str "_id")
+                  keyword)]
+    (integer table cname [:refer ptable :id :on-delete :no-action])))

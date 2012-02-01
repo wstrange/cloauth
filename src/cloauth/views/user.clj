@@ -9,7 +9,7 @@
             [noir.request :as request]
             [clojure.string :as string]  
             [clj-http.client :as client]
-            [clj-json.core :as json])
+            )
   (:use noir.core
         hiccup.core
         hiccup.page-helpers

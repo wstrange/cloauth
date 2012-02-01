@@ -10,7 +10,7 @@
         hiccup.core
         hiccup.page-helpers
         hiccup.form-helpers
-        clojure.data.json))
+        ))
 
 
 ; Test page
@@ -89,7 +89,6 @@
                 :client_secret secret
                 :redirect_uri (:redirectUri client)}
         url  (mk-url "/oauthclient/token")
-        xx (println url)
         result (http/post url
                           {:form-params params  
                            :content-type :json
@@ -98,10 +97,10 @@
       [:h1 "Access Token Result"]
       (if (= (:status result) 200)
         (let  [body (:body result) 
-               json (read-json body)
+               json (cheshire.core/parse-string body true)
                token (:access_token json)]
         [:div 
-          [:p"Retrieved token: " json ]
+          [:p "Response body =" body "\nRetrieved token: " json ]
           [:p (link-to (str "/test/resource?access_token=" token ) "Make a Test Request")]])
         ; else
         [:p "There was an error. " (prn result)]))))

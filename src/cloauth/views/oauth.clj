@@ -104,7 +104,7 @@
 ; of registering the "scope" description
 (defpage "/oauth2/consent" {:keys [oauth-request] :as req}  
   ;(prn "OAuth request " oauth-request )
-  (session/flash-put! oauth-request)
+  (session/flash-put! :oauth-request oauth-request)
   (let [clientId (:clientId oauth-request)       
         client (db/get-client-by-clientId clientId)]
     (common/layout
@@ -120,7 +120,7 @@
           ])))
 
 (defpage "/oauth2/consent/decide" {:keys [d] } 
-  (if-let [request (session/flash-get)] 
+  (if-let [request (session/flash-get :oauth-request)] 
     (if (= d "grant")
       (request-granted request)
       ; else

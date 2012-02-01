@@ -9,10 +9,16 @@ Token Expiry
 client - redirectUri - could be a collection
  
 
+logging 
 
 implement caching of scope uri lookup 
 
 Remember original request on redirect to login page
 
 client: Edit client, edit redirect URL
+ 
+ 
+ menu based selection driven from roles (hide/show based on roles)
+ Tie in with access filters
+ 
  

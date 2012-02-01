@@ -14,7 +14,7 @@
 (defn has-role? [user role]
   "Non nil if the user has role (identified by keyword)
   example (has-role user :admin)"  
-  (some (name role) (:roles user)))
+  (some #{role} (:roles user)))
 
 (defn current-user-record []
   (session/get :user))
@@ -39,14 +39,29 @@
   "Not nil if the user is logged in"
   (current-userName)) 
 
-
 (defentity users 
-  (entity-fields :id :verifiedEmail :userName  :firstName :lastName :roles ))
+  (entity-fields :id :verifiedEmail :userName  :firstName :lastName ))
+
+(defentity roles 
+  (entity-fields :roleName)
+   (belongs-to users {:fk :user_id}))
+
+(defn add-roles [userId roleList] 
+  (doseq [rname roleList] 
+    (println "adding role " rname " to userid" userId)
+    (insert roles (values {:roleName (name rname) :user_id userId}))))
+
+(defn get-roles-for-userid [userId] 
+  "return a sequence of keyword-ized role names for the user id"
+  (let [roles (select roles (where {:user_id userId}))]
+    (map #(keyword (:roleName %)) roles)))
 
 (defn get-user [username]
-  "return the user with the username"
-  (first
-    (select users (where {:userName username}))))
+  "return the user with the username. also fetches the roles"
+  (if-let [u (first
+            (select users (where {:userName username})))]
+    (merge u  {:roles (get-roles-for-userid (:id u))})))
+        
 
 (defn is-registered? [userName]
   "return the true if the user if registered, or nil"
@@ -62,15 +77,21 @@
     (map (fn [x] {x (x m)}) klist)))
 
 
+
 (defn insert-user! [u] 
-  "Add the user object. Return the id"
+  "Add the user object. Return the id. 
+  :roles is an optional collection of roles the user has"
   (println "Inserting user " u)
   ; The map u comes back from GIT and contains key/values we dont want to save in the DB
   ; We use the pick-values function to include only those 
-  (:id
-      (insert users (values (pick-values u [:verifiedEmail :userName 
+  (let [user  (insert users (values (pick-values u [:verifiedEmail :userName 
                               :displayName :firstName
-                              :lastName :language])))))
+                              :lastName :language])))
+        id (:id user)
+        roles (:roles u)]
+    (add-roles id roles)
+    ; return id
+    id )) 
 
 
 (defn update-user! [query fields]

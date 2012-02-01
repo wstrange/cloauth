@@ -5,15 +5,6 @@
                config helpers)))
 
 
-(comment
-(def db
-  {:classname   "org.postgresql.Driver"
-   :subprotocol "postgresql"
-    :subname "//localhost:5432/cloauth"
-    :user "cloauth"
-    :password "password"})
-(open-global db))
-
 (defmigration add-users-table
   (up [] (create
           (tbl :users
@@ -22,10 +13,17 @@
             (varchar :firstName 32 )
             (varchar :lastName 32)
             (varchar :displayName 64)
-            (varchar :language 10)
-            (varchar :roles 32))))          
+            (varchar :language 10))))          
   (down [] (drop (table :users))))
 
+
+(defmigration add-roles-table 
+  (up [] (create 
+           (tbl :roles
+                (varchar :roleName 10)
+                (refer-to :users))))
+  (down [] (drop (table :roles))))
+      
 (defmigration add-clients-table
   (up [] (create
           (tbl :clients
@@ -55,8 +53,9 @@
 
 (defmigration add-grant-scope-table 
   (up [] (create 
-           (table :grant_scope 
-                  (refer-to :scopes)
+           (table :grant_scope             
+                  (refer-to-nocascade :scopes)
                   (refer-to :grants))))
   (down [] (drop (table :grant_scope))))
+
 

@@ -1,7 +1,6 @@
 (ns cloauth.util
   "Misc Utility Functions. Move these somewhere else???"
-  (:require 
-            [clj-json.core :as json]))
+  )
 
 
 (def ascii-codes (concat (range 48 58) (range 66 91) (range 97 123)))

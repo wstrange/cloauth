@@ -3,7 +3,7 @@
         hiccup.core
         hiccup.page-helpers)
    (:require 
-            [clj-json.core :as json]))
+            [cheshire.core :as json]))
 
 
 ; Get our google API key stored on disk or in an environment var (heroku)
