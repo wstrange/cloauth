@@ -1,6 +1,7 @@
 (ns cloauth.views.welcome
   (:require [cloauth.views.common :as common]
-            [noir.session :as session])
+            [noir.session :as session]
+            [cloauth.models.kdb :as db])
   (:use noir.core    
         hiccup.core
         hiccup.page-helpers))
@@ -15,7 +16,8 @@
 (defpage "/welcome" []
          (common/layout
            [:h3 "OAuth AZ Server"]
-           [:p "Logged in user landing page"]))
+           [:p "Logged in user landing page"]
+           [:p "Admin user ="  (if (db/user-is-admin?) "true" "false")]))
 
 ; Page used to force login
 ; doto: figure out how to trigger JS login ... 

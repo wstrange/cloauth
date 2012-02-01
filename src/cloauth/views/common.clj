@@ -27,7 +27,7 @@
              (map #(get gitkit/javascripts %) scripts) 
               [:style {:type "text/css"}  "body { padding-top: 60px;}  "]
              ])
-; "Menu" data structure :title  :role (optional) :links 
+; "Menu" data structure :title  :check (optional fn to call to see if the menu should be rendered) :links 
 (def client-menu {:title "Client"
                   :links [["/client/register" "Register Client"]
                           ["/client/admin" "Manage Clients"]]})
@@ -35,11 +35,14 @@
 (def apps-menu  {:title "My Applications" 
                  :links [["/oauth2/user/grants" "Authorized Applications" ]]})
 
-(def admin-menu {:title "Admin"  :role :admin 
+(def admin-menu {:title "Admin"  
+                 :check-fn db/user-is-admin?
                  :links 
                  [["/admin/user" "Admin/Main"]
-                  ["/test" "Test Page"]]})   
+                 ]})   
 
+(def test-menu {:title "Test Pages"
+                :links  [["/test" "Test Page"]]})
 
 ; todo set default class for link items?
 (defpartial link-item [{:keys [url cls text]}]
@@ -49,10 +52,12 @@
   (for [[url text] links] 
     [:li (link-to url text )]))
 
-(defpartial render-menu [{:keys [title role links]}]
-  [:div 
-   [:h5 title]
-   [:ul (menu-items links)]])
+(defpartial render-menu [{:keys [title check-fn links]}]
+  (if (or (nil? check-fn) 
+          (check-fn))
+    [:div 
+     [:h5 title]
+     [:ul (menu-items links)]]))
                           
 
 ; Navigation Side bar
@@ -60,9 +65,9 @@
   [:div.sidebar
    [:div.well
     (render-menu admin-menu)
+    (render-menu test-menu)
     (render-menu client-menu)
     (render-menu main-menu)]])
-
 
 
 ;; Display the user name or a login link if the user has not logged in

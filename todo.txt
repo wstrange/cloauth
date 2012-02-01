@@ -18,7 +18,7 @@ Remember original request on redirect to login page
 client: Edit client, edit redirect URL
  
  
- menu based selection driven from roles (hide/show based on roles)
- Tie in with access filters
+ menu access rules should integrate with access filters 
+   (e.g. "/admin" should only be seen my admins)
  
  
