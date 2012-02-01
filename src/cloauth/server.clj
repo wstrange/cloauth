@@ -15,10 +15,10 @@
           port (if (pos? (.getPort url)) (.getPort url) 5432)
           path (.getPath url)]
       (merge
-       {:subname (str "//" host ":" port path)}
+       {:subname (str "//" host ":" port path)}(ns 
        (when-let [user-info (.getUserInfo url)]
          {:user (first (str/split user-info #":"))
-          :password (second (str/split user-info #":"))})))))
+          :password (second (str/split user-info #":"))}))))))
 
 ; Define the DB connect parameters. This should do the right thing
 ; for running local vs. running on heroku
@@ -35,7 +35,7 @@
 
 
 ; run test db select to verify its working.... 
-(println "test user select" (db/all-users)) 
+;(println "test user select" (db/all-users)) 
 
 ; heroku sets the port in an env var. We default to 8080 for localhost
 (def port (Integer. (get (System/getenv) "PORT" "8080")))
@@ -50,4 +50,3 @@
     (server/start port {:mode mode :ns 'cloauth})))
 
 ;(-main)
-

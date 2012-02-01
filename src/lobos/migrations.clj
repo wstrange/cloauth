@@ -59,3 +59,5 @@
   (down [] (drop (table :grant_scope))))
 
 
+(reset)
+(migrate)
