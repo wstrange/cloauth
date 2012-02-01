@@ -27,33 +27,43 @@
              (map #(get gitkit/javascripts %) scripts) 
               [:style {:type "text/css"}  "body { padding-top: 60px;}  "]
              ])
+; "Menu" data structure :title  :role (optional) :links 
+(def client-menu {:title "Client"
+                  :links [["/client/register" "Register Client"]
+                          ["/client/admin" "Manage Clients"]]})
 
-(def admin-links [{:url "/admin/user" :text "Admin/Main"}
-                  {:url "/test" :text "Test Page"}
-                ])
+(def apps-menu  {:title "My Applications" 
+                 :links [["/oauth2/user/grants" "Authorized Applications" ]]})
 
-(def client-links [{:url "/client/register" :text "Register Client"}
-                    {:url "/client/admin" :text "Manage Clients"}])
+(def admin-menu {:title "Admin"  :role :admin 
+                 :links 
+                 [["/admin/user" "Admin/Main"]
+                  ["/test" "Test Page"]]})   
 
-(def main-links [{:url "/oauth2/user/grants" :text "Authorized Applications" }])
-
-(def all-links (flatten [main-links admin-links client-links]))
 
 ; todo set default class for link items?
 (defpartial link-item [{:keys [url cls text]}]
             [:li (link-to url text)])
 
+(defn menu-items [links]
+  (for [[url text] links] 
+    [:li (link-to url text )]))
+
+(defpartial render-menu [{:keys [title role links]}]
+  [:div 
+   [:h5 title]
+   [:ul (menu-items links)]])
+                          
+
 ; Navigation Side bar
 (defpartial nav-content []
   [:div.sidebar
    [:div.well
-   [:h2 "Links"]
-   [:h5 "Admin"]
-   [:ul (map #(link-item %) admin-links)]
-   [:h5 "Client"]
-   [:ul (map #(link-item %) client-links)]
-   [:h5 "My Apps"]
-   [:ul (map #(link-item %) main-links)]]])
+    (render-menu admin-menu)
+    (render-menu client-menu)
+    (render-menu main-menu)]])
+
+
 
 ;; Display the user name or a login link if the user has not logged in
 ; The chooser div will get a GIT Sign in Button inserted via Javascript
