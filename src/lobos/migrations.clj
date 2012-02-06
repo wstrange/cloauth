@@ -59,5 +59,9 @@
   (down [] (drop (table :grant_scope))))
 
 
+(defn -main [] 
+  (rollback :all)
+  (migrate))
+
 ;(reset)
 ;(migrate)
