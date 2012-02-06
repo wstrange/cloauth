@@ -15,10 +15,10 @@
           port (if (pos? (.getPort url)) (.getPort url) 5432)
           path (.getPath url)]
       (merge
-       {:subname (str "//" host ":" port path)}(ns 
+       {:subname (str "//" host ":" port path)}
        (when-let [user-info (.getUserInfo url)]
          {:user (first (str/split user-info #":"))
-          :password (second (str/split user-info #":"))}))))))
+          :password (second (str/split user-info #":"))})))))
 
 ; Define the DB connect parameters. This should do the right thing
 ; for running local vs. running on heroku
@@ -31,6 +31,7 @@
          (heroku-db)))
 
  ; Create the db connection pool
+
 (defdb db db-params)
 
 
