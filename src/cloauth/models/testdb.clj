@@ -33,23 +33,11 @@
     
 
 
-(def ids 
-  
+(defn create-data []
   (try (do
          (nuke-it)
          (create-sample-data testUser))
     (catch Exception e (prn e))))
-
-
-(comment
- (def ids 
-  (try (create-sample-data testUser)
-    (catch Exception e (prn e))))
-
-(nuke-it)
-(create-sample-data testUser)
-
-  )
 
 
 
