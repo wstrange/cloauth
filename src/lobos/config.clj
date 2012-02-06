@@ -20,4 +20,4 @@
     (@lobos.connectivity/global-connections :default-connection)))
 
 
-(open-global-when-necessary server/db)
+(open-global-when-necessary server/db-params)
