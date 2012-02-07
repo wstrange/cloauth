@@ -10,7 +10,7 @@
 
 (defn orgname [user]  (str "Company-" user))
 
-(defn create-sample-data [uname]
+(defn- create-data [uname]
   (insert db/scopes (values {:uri "test" :description "Test Scope"}))
   (let [userId   (db/insert-user! {:userName uname :verifiedEmail uname :roles [:admin]})
         client   (db/new-client (orgname uname)
@@ -33,10 +33,10 @@
     
 
 
-(defn create-data []
+(defn create-sample-data []
   (try (do
          (nuke-it)
-         (create-sample-data testUser))
+         (create-data testUser))
     (catch Exception e (prn e))))
 
 

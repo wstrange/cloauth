@@ -26,7 +26,7 @@
   (println "register " form)
   (kdb/insert-client! 
     (kdb/new-client orgName description redirectUrl (kdb/current-userId)))
-  (session/flash-put! "Added new Client")
+  (session/flash-put! :message "Added new Client")
   (resp/redirect "/client/admin"))
   
 
@@ -41,17 +41,18 @@
     [:td (link-to (str "/client/admin/delete?id=" (:id clientRec)) "delete")]])
   
 (defpartial display-clients [] 
-  [:table.zebra-striped
+  [:table.table.table-striped.table-condensed
    [:thead
    [:tr 
-    [:th {:width "20%"} "Owner"]
-    [:th {:width "20%"} "Organization"]
-    [:th {:width "30%"} "Description"]
-    [:th {:width "20%"} "id / secret"]
-    [:th  {:width "10%"} "Action"]]]
+    [:th  "Owner"]
+    [:th "Organization"]
+    [:th  "Description"]
+    [:th "id / secret"]
+    [:th  "Action"]]]
     
    [:tbody
    (map #(display-client %)  (kdb/all-clients))]])
+
 
 ; Admin clients
 ; todo: Check role if admin - they can see all clients

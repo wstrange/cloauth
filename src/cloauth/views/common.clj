@@ -8,12 +8,12 @@
             ))
 
 ; Define all of the CSS and JS includes that we might need
-(def includes {:jquery (include-js "http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js")
+(def includes {:jquery (include-js "http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js")
                :jquery-ui (include-js "https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.2/jquery-ui.min.js")
-               :jquery-local (include-js "js/jquery-1.6.2.min.js")
+               :jquery-local (include-js "js/jquery-1.7.1.min.js")
                :jquery-ui-local (include-js "js/jquery-ui-1.8.16.custom.min.js")
                :bootstrap (include-css "/css/bootstrap.css")
-             
+               :bootstrap-responsive (include-css "/css/bootstrap-responsive.css")
                :google-apis (include-js "https://ajax.googleapis.com/ajax/libs/googleapis/0.0.4/googleapis.min.js")
                :jsapi (include-js "https://ajax.googleapis.com/jsapi")
               })
@@ -25,7 +25,8 @@
              [:title "Cloauth"]
              (map #(get includes %) incls)
              (map #(get gitkit/javascripts %) scripts) 
-              [:style {:type "text/css"}  "body { padding-top: 60px;}  "]
+              [:style {:type "text/css"}  "body { padding-top: 60px;}  
+.sidebar-nav { padding: 9px 0;}"]
              ])
 ; "Menu" data structure :title  :check (optional fn to call to see if the menu should be rendered) :links 
 (def client-menu {:title "Client"
@@ -52,17 +53,21 @@
   (for [[url text] links] 
     [:li (link-to url text )]))
 
+
+; If a menu has a check function defined call it.
+; If the fn returns true we render the menu, else nil 
+; This is used to include/exclude menus based on some criteria (role, for example)
 (defpartial render-menu [{:keys [title check-fn links]}]
   (if (or (nil? check-fn) 
           (check-fn))
-    [:div 
-     [:h5 title]
-     [:ul (menu-items links)]]))
+    [:div
+     [:li.nav-header title]
+     (menu-items links)]))
                           
 ; Navigation Side bar
 (defpartial nav-content []
-  [:div.sidebar
-   [:div.well
+  [:div.well.sidebar-nav
+   [:ul.nav.nav-list
     (render-menu admin-menu)
     (render-menu test-menu)
     (render-menu client-menu)
@@ -79,21 +84,31 @@
 
 ; Top mast header
 (defpartial topmast-content []
-       [:div.topbar 
-         [:div.topbar-inner
+       [:div.navbar.navbar-fixed-top 
+         [:div.navbar-inner
           [:div.container-fluid
+           [:a.btn.btn-navbar {:data-toggle "collapse" :data-target ".nav-collapse"}
+            [:span.icon-bar]
+            [:span.icon-bar]
+            [:span.icon-bar]]
            [:a.brand {:href "/"} "CloAuth"]
-           [:ul.nav
-            [:li.active (link-to "/" "Home")]
-            [:li (link-to "/about" "About")]
-           ]
-           [:p.pull-right (logged-in-status)]]]])
+           [:div.nav-collapse.in.collapse {:style "height: auto; " }
+            [:ul.nav
+             [:li.active (link-to "#" "Home")]
+             [:li (link-to "/about" "About")]
+             ]
+             [:p.pull-right.navbar-text  (logged-in-status)]
+           ]]]])
 
-  
+; css and js includes that every page will need
+(def base-includes [:bootstrap :bootstrap-responsive :jquery :jquery-ui])
+
+; Output the header. If the user is not logged in also include the 
+; google GIT javascript which renders the login popup and button
 (defn header []
   (if (db/logged-in?)
-    (build-head [:bootstrap :jquery :jquery-ui ] [] )
-    (build-head [:bootstrap :jquery :jquery-ui :jsapi :google-apis] [:git-load :git-init])))
+    (build-head base-includes [] )
+    (build-head (into base-includes [:jsapi :google-apis]) [:git-load :git-init])))
 
 ;; Layouts
 
@@ -105,13 +120,12 @@
             [:body
              (topmast-content)
               [:div.container-fluid 
-               (nav-content)
-               [:p]
-               [:p]
-              [:div.content 
-               [:div.hero-unit content ]       
-              
-               [:footer  [:p "Copyright (c) 2011 Warren Strange"]]]]]))
+               [:div.row-fluid
+                [:div.span3 (nav-content)]    
+                [:div.span9  content]]
+                ; [:div.hero-unit  ]]] ; end row-fluid
+               [:hr]
+               [:footer  [:p "Copyright (c) 2011 Warren Strange"]]]]))
 
 ; Standard layout - no additional javascript or css
 (defpartial layout [& content]

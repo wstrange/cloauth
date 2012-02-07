@@ -20,5 +20,8 @@ client: Edit client, edit redirect URL
  
  menu access rules should integrate with access filters 
    (e.g. "/admin" should only be seen my admins)
- 
+   
+Edit user roles - for admins
+
+Bootstrap - 2.0
  

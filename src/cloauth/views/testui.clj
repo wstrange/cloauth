@@ -99,9 +99,10 @@
         (let  [body (:body result) 
                json (cheshire.core/parse-string body true)
                token (:access_token json)]
-        [:div 
-          [:p "Response body =" body "\nRetrieved token: " json ]
-          [:p (link-to (str "/test/resource?access_token=" token ) "Make a Test Request")]])
+          [:div
+           [:p "Response body:"  [:br] body ]
+           [:p "Retrieved token: " [:br] json ]
+           [:p (link-to (str "/test/resource?access_token=" token ) "Make a Test Request")]])
         ; else
         [:p "There was an error. " (prn result)]))))
 
@@ -117,4 +118,7 @@
       [:p "Token is invalid"])))
 
 
+(defpage "/test/create-data" []
+  (testdb/create-sample-data)
+  (resp/redirect "/test"))
   

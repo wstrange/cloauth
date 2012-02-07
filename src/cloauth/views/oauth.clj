@@ -189,13 +189,13 @@
 ;;; User Token Management
 ; Show the users auth codes
 (defpartial user-grants [userId] 
-  [:table 
+  [:table.table.table-striped
     [:tr 
-    [:th  {:width "20%"} "Company"]
-    [:th {:width "40%"} "Description"]
-    ;[:th  {:width "20%"} "Scope"]
+    [:th "Company"]
+    [:th "Description"]
+    ;[:th "Scope"]
   
-    [:th {:width "30%"} "Action"]]
+    [:th "Action"]]
   (map #(display-grant %) (db/get-grants userId))])
 
 
