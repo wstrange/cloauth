@@ -87,18 +87,9 @@
        [:div.navbar.navbar-fixed-top 
          [:div.navbar-inner
           [:div.container-fluid
-           [:a.btn.btn-navbar {:data-toggle "collapse" :data-target ".nav-collapse"}
-            [:span.icon-bar]
-            [:span.icon-bar]
-            [:span.icon-bar]]
            [:a.brand {:href "/"} "CloAuth"]
-           [:div.nav-collapse.in.collapse {:style "height: auto; " }
-            [:ul.nav
-             [:li.active (link-to "#" "Home")]
-             [:li (link-to "/about" "About")]
-             ]
-             [:p.pull-right.navbar-text  (logged-in-status)]
-           ]]]])
+           [:p.pull-right.navbar-text  (logged-in-status)]
+           ]]])
 
 ; css and js includes that every page will need
 (def base-includes [:bootstrap :bootstrap-responsive :jquery :jquery-ui])

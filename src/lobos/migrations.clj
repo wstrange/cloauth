@@ -30,7 +30,7 @@
             (varchar :clientId 32 :unique)
             (varchar :clientSecret 32)
             (varchar :orgName 32)
-            (varchar :description 64)
+            (varchar :description 128)
             (varchar :redirectUri 256)
             (refer-to :users))))
   (down [] (drop (table :clients))))

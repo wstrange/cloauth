@@ -19,6 +19,10 @@
 (defn current-user-record []
   (session/get :user))
 
+(defn current-user-pk [] 
+  "get the id (primary key) of the current logged in user"
+  (:id (current-user-record)))
+
 (defn user-is-admin? []
   "True if the current user has the admin role"
   (has-role? (current-user-record) :admin))
@@ -127,15 +131,16 @@
    :user_id userId
    :description description 
    :redirectUri  redirectUri 
-   :clientId (util/gen-id 32) 
-   :clientSecret (util/gen-id 32)})
+   :clientId (util/gen-id 24) 
+   :clientSecret (util/gen-id 24)})
 
 (defn insert-client! [client]
   "Insert a client record into the DB. Return the primary key"
   (println "Inserting new client record values = " client)
    (:id (insert clients (values client))))
-   
-
+  
+(defn update-client! [id fields]
+  (update clients (where {:id (Integer/parseInt id)}) (set-fields fields)))
 
 (defn clients-owned-by-user-id [id]
   (select clients (where {:user_id id})))
@@ -145,11 +150,14 @@
   (println "get client by id =" clientId)
   (first (select clients (where {:clientId clientId}))))
 
+(defn get-client [id]
+  "get client by the surrogate id key" 
+  (first (select clients (where {:id (Integer/parseInt id)}))))
 
  
 (defn delete-client! [id]
   (println "delete client id= " id)
-  (delete clients (where {:id [= (Integer/parseInt id)]})))
+  (delete clients (where {:id (Integer/parseInt id)})))
 
 
 ;(defn all-clients [] (select clients))
