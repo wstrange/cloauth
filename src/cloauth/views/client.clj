@@ -69,9 +69,10 @@
       [:p "You do not have permissio to delete this record"])))
     
 (defn- mk-label [id text]
+  "Make a bootstrap label"
   (label {:class "control-label"} id text))
 
-  
+ ; generate fields using bootstrap css
 (defpartial client-fields [client]
   [:div
            [:fieldset  
@@ -91,17 +92,13 @@
                           :name "clientSecret"
                           :id "clientSecret"
                           :value (:clientSecret client)
-                          :readonly "readonly"}]]]
-             
-             
+                          :readonly "readonly"}]]]         
             [:div.control-group
              (mk-label :generateSecret "Generate new secret?")
-              [:div.controls  (check-box  :generateSecret false )]]
-            
+              [:div.controls  (check-box  :generateSecret false )]]         
             [:div.control-group
               (mk-label :orgName "Organization Name:" ) 
-              [:div.controls (text-field :orgName (:orgName client))]]
-              
+              [:div.controls (text-field :orgName (:orgName client))]]       
             [:div.control-group 
               (mk-label :description "Application Description:" ) 
                [:div.controls 

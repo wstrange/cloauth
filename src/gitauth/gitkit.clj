@@ -28,7 +28,7 @@
                     :userStatusUrl "/authn/userstatus"
                     :loginUrl "/authn/login"
                     :signupUrl "/authn/signup"
-                    :homeUrl "/welcome"
+                    :homeUrl "/"
                     :logoutUrl "/authn/logout"
                     :language "en"
                     :idps ["Gmail", "Yahoo", "AOL", "Hotmail"],
