@@ -5,8 +5,15 @@
             [noir.session :as session]
             [cloauth.util :as util]
             [noir.validation :as vali])
-   (:use korma.db korma.core))
+   (:use korma.db korma.core hiccup.core))
 
+
+; utility to prep objects to prevent xss
+(defn sanitize-input [x keys] 
+  "Takes object x and html-escapes any of the specified keys 
+  returns a map with just those keys escaped"
+  (into {}
+      (map (fn [k] {k (escape-html (k x))}) keys)))
 
 ; user  / session management
 ;
@@ -116,13 +123,12 @@
 (defentity clients 
   (entity-fields :id :clientId :clientSecret :orgName :description :redirectUri :user_id )
   (belongs-to users {:fk :user_id})
-  
   (prepare (fn [x] 
       (merge x 
-        (if-not (:clientId x)  {:clientId (util/gen-id 32)})
-        (if-not (:clientSecret x) {:clientSecret (util/gen-id 32)})))))
-
-                          
+        (if (string? (:user_id x))  {:user_id (Integer/parseInt (:user_id x))})
+        (sanitize-input x [:orgName :description :redirectUri])
+        ))))
+                         
 ;todo: prepare could do this?
 (defn new-client [orgName description redirectUri userId]
   "Generate a new client record. Generates unique id and client secret
@@ -131,8 +137,8 @@
    :user_id userId
    :description description 
    :redirectUri  redirectUri 
-   :clientId (util/gen-id 24) 
-   :clientSecret (util/gen-id 24)})
+   :clientId (util/generate-client-id-or-secret) 
+   :clientSecret (util/generate-client-id-or-secret)})
 
 (defn insert-client! [client]
   "Insert a client record into the DB. Return the primary key"

@@ -4,18 +4,24 @@
         hiccup.page-helpers
          hiccup.form-helpers)
   (:require [cloauth.models.kdb :as db]
+            [noir.session :as session]
             [gitauth.gitkit :as gitkit]
             ))
 
 ; Define all of the CSS and JS includes that we might need
 (def includes {:jquery (include-js "http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js")
                :jquery-ui (include-js "https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.2/jquery-ui.min.js")
-               :jquery-local (include-js "js/jquery-1.7.1.min.js")
-               :jquery-ui-local (include-js "js/jquery-ui-1.8.16.custom.min.js")
+               :jquery-local (include-js "/js/jquery-1.7.1.min.js")
+               :jquery-ui-local (include-js "/js/jquery-ui-1.8.16.custom.min.js")
                :bootstrap (include-css "/css/bootstrap.css")
                :bootstrap-responsive (include-css "/css/bootstrap-responsive.css")
                :google-apis (include-js "https://ajax.googleapis.com/ajax/libs/googleapis/0.0.4/googleapis.min.js")
                :jsapi (include-js "https://ajax.googleapis.com/jsapi")
+               ; bootstrap javascript
+               :bootstrap-js (include-js "/js/bootstrap.js")
+               ; bit of script code to enable various bootstrap 2.0 javascript stuff
+               :bootstrap-js-init (javascript-tag "$(document).ready(function () { 
+                               $('.alert-message').alert();  });")
               })
 
 ; create the page <head>
@@ -92,7 +98,7 @@
            ]]])
 
 ; css and js includes that every page will need
-(def base-includes [:bootstrap :bootstrap-responsive :jquery :jquery-ui])
+(def base-includes [:bootstrap :bootstrap-responsive :jquery :jquery-ui :bootstrap-js :bootstrap-js-init])
 
 ; Output the header. If the user is not logged in also include the 
 ; google GIT javascript which renders the login popup and button
@@ -113,7 +119,12 @@
               [:div.container-fluid 
                [:div.row-fluid
                 [:div.span3 (nav-content)]    
-                [:div.span9  content]]
+                [:div.span9  
+                 (if-let [message (session/flash-get :message)]
+                    [:div.alert.alert-success.fade.in
+                     [:a.close {:data-dismiss "alert" :href "#"} "x" ]
+                     message])
+                 content]]
                 ; [:div.hero-unit  ]]] ; end row-fluid
                [:hr]
                [:footer  [:p "Copyright (c) 2011 Warren Strange"]]]]))

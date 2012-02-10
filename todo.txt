@@ -23,5 +23,13 @@ client: Edit client, edit redirect URL
    
 Edit user roles - for admins
 
-Bootstrap - 2.0
+
+Things that would be nice to have in framework
+- Authorization - for menus and URLs
+- Nice/easy form/menus generation (help text, pop up handlers, etc.)
+- Integrated use of CSS framework (Bootstrap)
+- html Escaping of input text  (done with h fn in hiccup core) 
+- i18n 
+
+
  
