@@ -21,9 +21,6 @@
             [:p (string/join "<br/>" errors)])
 
 
-(defpartial user-item [{:keys [userName]}]
-            [:li
-             (link-to (str "/admin/user/edit?u=" userName) userName)])
 
 
 (defpartial user-fields [{:keys [userName displayName] :as usr}]
@@ -35,12 +32,20 @@
 
 ;; Admin Pages
 
+(defpartial user-item [{:keys [userName]}]
+            [:tr
+             [:td userName]
+             [:td (link-to (str "/admin/user/edit?u=" userName) "edit") " "
+               (link-to (str "/admin/user/remove?user=" userName) "delete")]])
+
 
 (defpage "/admin/user" []
    (common/layout
-     [:h1 "Admin Page"]
+     [:h1 "User Admin Page"]
      [:p "Curent Users"]
-     [:ul.items 
+     [:table.table 
+      [:th "Username" ]
+      [:th "Actions"] 
       (map user-item (db/all-users)) ] ))
 
 
@@ -48,14 +53,14 @@
          (let [user (db/get-user u)]
            (common/layout
              [:h2 "Edit User"]
+             [:h4 "NOTE: NOT IMPLEMENTED YET. Abandon all hope past this point"]
+             [:br]
+             [:p "Better to go back now. no really."]
              (form-to [:post "/admin/user/edit"]
                       (user-fields user)
-                      [:ul.actions
-                        [:li (link-to {:class "submit"} "/" "Submit")]
-                        [:li (link-to {:class "delete"} (str "/admin/user/remove?user=" u ) "Remove")]]
+                      [:br]
                       [:button "Submit"]
                       ))))
-
 
 ;; Post action after user is updated
 (defpage [:post "/admin/user/edit"] {:as user}
@@ -70,7 +75,7 @@
 
 (defpage "/admin/user/remove" {:keys [user]}
   (println "removing" user)
-  (db/delete-username! {:userName user})
+  (db/delete-username! user)
   (resp/redirect "/admin/user"))
 
 ;; User profile pages

@@ -11,8 +11,8 @@
            [:h3 "OAuth AZ Server"]
            [:p "Welcome"]
            [:p "This is an experimental OAuth provider written in Clojure"]
-           [:p "To get started login with an openid account, or use the 'test' account login available under the "
-            (link-to "/test" "test page menu")]
+           [:p "To get started login with an openid account using the Sign In Button (upper right corner), or use the 'test' account login available under the "
+            (link-to "/test" "test page")]
            [:p "Get the source on " (link-to "https://github.com/wstrange/cloauth" "github")]))
 
 ;; Todo - check for continuing request redirect

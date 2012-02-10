@@ -66,7 +66,7 @@
       (render "/client/admin"))
     ; else
     (common/layout 
-      [:p "You do not have permissio to delete this record"])))
+      [:p "You do not have permission to delete this record"])))
     
 (defn- mk-label [id text]
   "Make a bootstrap label"
@@ -104,8 +104,7 @@
                [:div.controls 
                 ;[:textarea.span12 {:type "text-area" :value (:description-client client)}]
                 (text-area :description (:description client))
-                [:p.help-block "This descriptive text will be shown to users when they are asked to authorize your application"]]]
-            
+                [:p.help-block "This descriptive text will be shown to users when they are asked to authorize your application"]]]           
             [:div.control-group
               (mk-label  :redirectUri "Redirect URIs:" ) 
                [:div.controls (text-area {:size "50" } :redirectUri (:redirectUri client))

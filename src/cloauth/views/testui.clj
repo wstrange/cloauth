@@ -16,49 +16,48 @@
 ; Test page
 (defpage "/test" []
   (common/layout 
-    [:h4 "Test Login"]
-    [:p "The 'test' user has the admin role and can access expanded functionality"]
-    [:p  (link-to "/test/login" "Login as the Test User")]
+    (if-not (db/current-userName)
+      [:div
+        [:h4 "Test Login"]
+        [:p "The 'test' user has the admin role and can access expanded functionality"]
+        [:p  (link-to "/test/login" "Login as the Test User")]])
     
     [:h4 "OAuth Flows"]
-    [:p "The following link will initiate an OAuth 3 legged 'web' server flow. 
+    [:p "The following links will initiate OAuth flows. 
 Rather than have a seperate client for testing, we are using a built in client that will simulate the client side of the
-OAuth flow"]
-    [:p  "When this link is clicked the client will request a code token from the provider. If the user 
-has not previously consented they will be asked to review the request. If granted the provider will return
-code token to the client"]
+OAuth dance"]
+    [:p  "If the user 
+has not previously consented they will be asked to review the request. If granted the provider will continue the flow
+and return a code token (3 legged) or access token (2 legged) back to the client"]
     
     [:p "If you are not seeing the consent page go to " (link-to "/oauth2/user/grants" "Authorized Applications") " and 
 revoke any existing consent"]
-    [:p
-    
+    [:hr]
+    [:h4 "Three legged (Web server) flow"]
      (link-to (str "/oauth2/authorize?"
                   (encode-params {:client_id (testdb/testClientId)
                                   :redirect_uri "/test/redirect"
                                   :response_type "code"
                                   :state "teststate"
                                   :scope "test"}))
-             "Initiate Web server 3 legged OAuth")]
+             "Initiate Web server 3 legged OAuth")
   
-     [:p "The following link will initiate a two legged OAuth flow"
-      [:br]
+     [:hr]
+     [:h4 "Two Legged OAuth"]
+     [:br]
      (let [uri (str "/oauth2/authorize?"
                   (encode-params {:client_id (testdb/testClientId)
                                   :redirect_uri "/test/redirect"
                                   :response_type "token"
                                   :state "teststate"
-                                  :scope "test"})) ]
-       
-     [:a {:href  uri 
-          :target "_blank"}
-          "POP UP - Test two legged oauth flow"])
-     ]))
+                                  :scope "test"}))]    
+       [:a {:href  uri :target "_blank"} "Test two legged oauth flow"])))
 
 ; url that performs login on a test user 
 ; This is convenience for testing that provides fast login
 (defpage "/test/login" []
   (db/login! (db/get-user testdb/testUser))
-  (resp/redirect "/welcome"))
+  (resp/redirect "/"))
 
 (defpage "/test/sampledata" []
   (resp/redirect "/"))
@@ -85,8 +84,8 @@ revoke any existing consent"]
     (cond code 
       [:div  
         [:p "If you see this page the user has consented to allow the client
-access to the requested scope. The provider has returned a code token which can now be used by the
-client to request an access token"]
+access to the requested scope. The provider has returned a code token which can be exchanged by the
+client for an access token and refresh token"]
        [:p "The access code returned by the provider is " code]
        [:p "This code is valid for a one time use, and will expire in 5 minutes"]
        [:p (link-to (str "/test/get-token?code=" code) "Get an Access Token")]]
@@ -119,20 +118,22 @@ This token can be used to access a resource. We have a simulated resource that y
       (if (= (:status result) 200)
         (let  [body (:body result) 
                json (cheshire.core/parse-string body true)
-               token (:access_token json)]
+               token (:access_token json)
+               refresh (:refresh_token json)]
           [:div
          
            [:p "Retrieved token: " [:br] json ]
-           [:p (link-to (str "/test/resource?access_token=" token ) "Make a Test Resource Request")]])
+           [:p (link-to (str "/test/resource?access_token=" token "&refresh_token=" refresh) "Make a Test Resource Request")]])
         ; else
         [:p "There was an error. " (prn result)]))))
 
 ; Simulates a protected resource
-(defpage "/test/resource" {:keys [access_token]} 
+(defpage "/test/resource" {:keys [access_token refresh_token]} 
   (common/layout
     [:h4 "Access Resource Test Page"]
     [:p "This is a client side page that simulates accessing a resource using the granted access token.
-Note for the purpose of the demo the access token expiry is quite short.  We simulate 'accessing' a resource 
+Note for the purpose of the demo the access token expiry is quite short. "]
+    [:p "We simulate 'accessing' a resource 
 by making a direct call to validate the token. If you reload this page in the browser you will see
 that the token will eventually expire."]
     [:p "Resource Access Test: access_token=" access_token ]
@@ -141,8 +142,10 @@ that the token will eventually expire."]
          [:p "Token is valid" ]
          [:p "Allowed Scopes = " (str (:scopes t))]]
       ; else
-      [:p "Token is invalid"])))
-
+      [:div 
+       [:p "Access token has expired."]
+       (if refresh_token 
+         [:p "Use the " (link-to "/" "refresh token") " to get another one [NOT DONE YET]"])])))
 
 (defpage "/test/create-data" []
   (testdb/create-sample-data)

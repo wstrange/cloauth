@@ -133,7 +133,9 @@
          ; return new access token
          (token/new-access-token clientId userId scopes)))))
 
-(defn handle-refresh-token-grant [request]  
+(defn handle-refresh-token-grant [client_id refresh_token]  
+  "At this point the client id/secret has been validated"
+  
   {:error "not done!"})
 
 
