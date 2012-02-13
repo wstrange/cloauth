@@ -153,7 +153,7 @@ See http://code.google.com/apis/identitytoolkit/v1/acguide.html
     (kdb/login! (kdb/get-user (:userName user)))
     ; nuke the signup session var as it is not needed anymore
     (session/remove! :signup)) 
-  (resp/redirect "/welcome")) 
+  (resp/redirect "/")) 
 
 (defpage "/signup/cancel" {:keys [userName]}
   (render "/authn/logout"))

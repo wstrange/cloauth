@@ -6,13 +6,21 @@
         hiccup.core
         hiccup.page-helpers))
 
+(def test-page-link   (link-to "/test" "test page"))
+
 (defpage "/" []
          (common/layout
-           [:h3 "OAuth AZ Server"]
-           [:p "Welcome"]
+           [:h3 "OAuth AZ Server"]          
            [:p "This is an experimental OAuth provider written in Clojure"]
-           [:p "To get started login with an openid account using the Sign In Button (upper right corner), or use the 'test' account login available under the "
-            (link-to "/test" "test page")]
+           (if-let [user (db/current-userName) ]
+             [:div 
+              [:p "Welcome " user ]
+              [:p "You can test sample OAuth flows from the " test-page-link]]
+             ; else
+             [:div   
+              [:p "To get started login with an openid account using the Sign In Button (upper right corner) " 
+               "or use the 'test' account login available under the " test-page-link]])
+
            [:p "Get the source on " (link-to "https://github.com/wstrange/cloauth" "github")]))
 
 ;; Todo - check for continuing request redirect
