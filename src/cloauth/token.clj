@@ -50,7 +50,7 @@
    Returns a map which is used as the json response - 
    contains the generated auth code "
   (println "Create Auth Code request = " oauth-request)
-  (let  [code (generate-token)
+  (let  [code (util/generate-token)
          t  {:request oauth-request ; save the original request
              :refresh_token refreshToken
              :expires   ( min-to-future-unix-time authcode-lifetime)}]
