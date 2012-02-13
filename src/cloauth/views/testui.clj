@@ -96,36 +96,41 @@ client for an access token and refresh token"]
        :else
        [:p "There was an error " (:error req)])))
 
-; Show the result of exchanging a auth code for a token
-(defpage "/test/get-token" {:keys [code] :as req}
-  (let [client (db/get-client-by-clientId (testdb/testClientId))
+
+(defn call-token-endpoint [call-params] 
+  "Call the token endpoint on the provider - return a parsed json response or nil on error"
+   (let [client (db/get-client-by-clientId (testdb/testClientId))
         id (:clientId client)
         secret (:clientSecret client)
-        params {:code  code 
-                :grant_type "authorization_code"
-                :client_id  id
-                :client_secret secret
-                :redirect_uri (:redirectUri client)}
+        params (merge { :client_id  id
+                        :client_secret secret
+                        :redirect_uri (:redirectUri client)}
+                      call-params)
         url  (mk-url "/oauthclient/token")
-        result (http/post url
-                          {:form-params params  
-                           :content-type :json
-                           :basic-auth [id secret]})]
-    (common/layout 
+        result (http/post url {:form-params params  
+                     :content-type :json
+                     :basic-auth [id secret]})]
+     
+     (if (= (:status result) 200)
+        (cheshire.core/parse-string (:body result) true))))
+
+  
+; Show the result of exchanging a auth code for a token
+(defpage "/test/get-token" {:keys [code] :as req}
+   (common/layout 
       [:h1 "Access Token Result"]
-      [:p "This is a client side  page that shows the access token returned to the client.
-This token can be used to access a resource. We have a simulated resource that you can access with the token"]
-      (if (= (:status result) 200)
-        (let  [body (:body result) 
-               json (cheshire.core/parse-string body true)
-               token (:access_token json)
-               refresh (:refresh_token json)]
-          [:div
-         
+      [:p "This is a client side page showing the access token returned to the client.
+   This token can be used to access a resource. For the demo there is simulated resource that you can access with the token"]
+      (if-let [json (call-token-endpoint {:code  code :grant_type "authorization_code"})]
+        (do 
+          (println "Got response back from token endpoint " json)
+          [:div     
            [:p "Retrieved token: " [:br] json ]
-           [:p (link-to (str "/test/resource?access_token=" token "&refresh_token=" refresh) "Make a Test Resource Request")]])
+           [:p (link-to (str "/test/resource?access_token=" (:access_token json)
+                             "&refresh_token=" (:refresh_token json)) 
+                        "Make a Test Resource Request")]])
         ; else
-        [:p "There was an error. " (prn result)]))))
+        [:p "There was an error calling the token endpoint. "])))
 
 ; Simulates a protected resource
 (defpage "/test/resource" {:keys [access_token refresh_token]} 
@@ -143,9 +148,28 @@ that the token will eventually expire."]
          [:p "Allowed Scopes = " (str (:scopes t))]]
       ; else
       [:div 
-       [:p "Access token has expired."]
-       (if refresh_token 
-         [:p "Use the " (link-to "/" "refresh token") " to get another one [NOT DONE YET]"])])))
+       [:p "Access token has expired."]])
+    
+    (if refresh_token 
+      [:div  
+       [:h4 "Refresh Token"] 
+       [:p "Refresh token value is " refresh_token]
+       [:p " " (link-to (str "/test/refresh?refresh_token=" refresh_token) "Use refresh token ")]])))
+
+(defpage "/test/refresh" {:keys [refresh_token]} 
+   (common/layout 
+     (if-let [json (call-token-endpoint {:grant_type "refresh_token" :refresh_token refresh_token})]
+       [:div 
+        [:h4 "Refresh Token Result"]
+        [:p "Got back the following response " json]
+        [:p (link-to (str "/test/resource?access_token=" 
+                          (:access_token json)
+                          "&refresh_token=" 
+                          (:refresh_token json)) "Access a resource with this token")]]
+       ; else
+       [:p "There was an error calling the endpoint"])))
+
+    
 
 (defpage "/test/create-data" []
   (testdb/create-sample-data)

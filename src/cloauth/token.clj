@@ -4,6 +4,7 @@
    todo: eventually the implemenation should use some kind
    of memcache like protocol to cache tokens across server instances.
    Right now this only works in a single instance of the application"
+  (:require [cloauth.util :as util])
   )
   
 
@@ -23,8 +24,6 @@
 (defn gen-id [length]
   "Generate a random string of given length. Used for client id, secrets, etc."
   (apply str (repeatedly length #(char (rand-nth ascii-codes)))))
-
-(defn generate-token [] (gen-id 32))
 
 (defn- msec-to-sec [msec] 
   "Convert msec to seconds"
@@ -46,13 +45,14 @@
   ;(println "Purging code " code)
   (swap! *auth-codes* dissoc code))
 
-(defn create-auth-code [oauth-request] 
+(defn create-auth-code [oauth-request refreshToken] 
   "Create a new short lived auth code request
    Returns a map which is used as the json response - 
    contains the generated auth code "
   (println "Create Auth Code request = " oauth-request)
   (let  [code (generate-token)
          t  {:request oauth-request ; save the original request
+             :refresh_token refreshToken
              :expires   ( min-to-future-unix-time authcode-lifetime)}]
        (swap! *auth-codes* assoc code t)
        ;(print-tokens)
@@ -68,12 +68,11 @@
 ; values are a map that describe what the token can access 
 (def ^:dynamic *access-tokens* (atom {}))
 
-(defn new-access-token [clientId userId scopes]
+(defn new-access-token [clientId userId scopes refreshToken ]
   "Create a new access token. Assumes request has been validated
   saves the access token to memory an returns a map
   that is used as JSON response"
-  (let [atoken (generate-token) 
-        refreshToken (generate-token)
+  (let [atoken (util/generate-token) 
         tval {:access_token atoken
               :expires (min-to-future-unix-time default-access-token-expiry-minutes)
               :clientId clientId 
@@ -81,11 +80,11 @@
               :scopes scopes}]
       ; add the access token to the map
       (swap! *access-tokens* assoc atoken tval)
+      ;(println "Generated access token " atoken " refresh " refreshToken)
       ; return a json map 
-      {:access_token atoken
-       :refresh_token refreshToken
-       :token_type "Bearer"
-       :expires_in (* 60 default-access-token-expiry-minutes) }))
+      (merge {:access_token atoken :token_type "Bearer"
+              :expires_in (* 60 default-access-token-expiry-minutes) }
+             (if refreshToken {:refresh_token refreshToken}))))
 
 
 (defn get-token-entry [token] 

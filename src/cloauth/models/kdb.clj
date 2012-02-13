@@ -228,6 +228,18 @@
         gid (:id  g)] 
     (doseq [s scope-list] 
       (add-scope-to-grant gid s)))))
+
+(defn get-grant-for-refreshToken [refreshToken client_id] 
+  (println "get grant for refreshToken " refreshToken  " client id " client_id)
+  (first (select grants (fields :id :user_id :expiry) 
+                 (where (and {:client_id client_id} {:refreshToken refreshToken})))))
+                       
+(defn get-grant-scopes [grant-id] 
+  "return a list of scopes for this grant"
+  (vec (map #(:uri %) 
+            (select grant_scope (with scopes) (fields :scopes.uri)
+                    (where {:grant_id grant-id})))))
+            
  
 (defn get-grants [userId]
   "Get all the grants for the user - joined with the client descriptions"
@@ -248,6 +260,8 @@
                                    (where {:clientId clientId}))}))))
                   
 
+
+                         
 (defn grant-scopes-are-the-same [userId clientId scopes]
   "Given a set of scopes, return true if there is an existing grant for the user/client that grants the same set of scopes"
   

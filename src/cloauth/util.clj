@@ -10,7 +10,7 @@
   (apply str (repeatedly length #(char (rand-nth ascii-codes)))))
 
 (defn generate-client-id-or-secret [] (gen-id 24))
-(defn generate-token [] (gen-id 32))
+(defn generate-token [] (gen-id 24))
 
   
 (defn get-url [url] 

@@ -7,6 +7,7 @@
             [noir.session :as session]
             [cloauth.oauth2 :as oauth]
             [cloauth.token :as token]
+            [cloauth.util :as util]
             [cloauth.models.kdb :as db]
             [cloauth.views.common :as common])
   (:use noir.core
@@ -57,19 +58,20 @@
   
   (let [clientId (:clientId request) 
         userId (:userId request)
-        scopes (:scopes request)]
+        scopes (:scopes request)
+        refreshToken (util/generate-token)]
         
   ;Remember the users decision so we don't need to re-prompt them in the future"
-  (db/create-grant clientId  userId  scopes (token/generate-token))
+  (db/create-grant clientId  userId  scopes refreshToken)
    
   (if (= (:responseType request) "token")
      ; token type - 2 legged oauth - we send back an access token - not a code token
      ; todo does this require JSONP ? So the client JS can parse the fragment
      ; in this case the callback might be a javascript function to call?
      ;(resp/json (token/new-access-token clientId userId scopes))
-     (send-redirect request (token/new-access-token clientId userId scopes))
+     (send-redirect request (token/new-access-token clientId userId scopes refreshToken))
      ; else - redirect back to web app
-     (send-redirect request (token/create-auth-code request)))))
+     (send-redirect request (token/create-auth-code request refreshToken)))))
      
 (defn- request-denied [request] 
    (error-response (merge request {:error_code "access_denied"})))

@@ -111,6 +111,7 @@
 (defn handle-authcode-grant [clientId redirectUri code ]   
   (let [authEntry (token/get-authcode-entry code)
         oauthRequest (:request authEntry)
+        refreshToken (:refresh_token authEntry)
         originalClientId (:clientId oauthRequest)
         userId (:userId oauthRequest)
         scopes (:scopes oauthRequest)
@@ -121,7 +122,7 @@
       (nil? authEntry) 
       {:error :access_denied}
         
-      ; badredirect URL true ? return that error
+      ; badredirect URL  ? return that error
       badRedirect badRedirect
       
       (not= originalClientId clientId)
@@ -131,13 +132,22 @@
       (do 
          (token/purge-code code) ; one time use only 
          ; return new access token
-         (token/new-access-token clientId userId scopes)))))
+         (token/new-access-token clientId userId scopes refreshToken)))))
 
 (defn handle-refresh-token-grant [client_id refresh_token]  
   "At this point the client id/secret has been validated"
-  
-  {:error "not done!"})
-
+  (println "Renew Grant: Refresh token " refresh_token  " client " client_id )
+  (let [client (db/get-client-by-clientId client_id)
+        cid (:id client)
+        grant (db/get-grant-for-refreshToken  refresh_token cid)]
+    (println "Found grant " grant)
+    (if grant 
+      (let [scopes (db/get-grant-scopes (:id grant))]        
+           (println "got scopes " scopes)
+             (token/new-access-token client_id (:user_id grant) scopes refresh_token))
+             ;else
+             {:error "Internal error"}
+             )))
 
 
 (defn handle-oauth-token-user-request [oauthrequest] 
