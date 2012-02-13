@@ -35,11 +35,11 @@
 .sidebar-nav { padding: 9px 0;}"]
              ])
 ; "Menu" data structure :title  :check (optional fn to call to see if the menu should be rendered) :links 
-(def client-menu {:title "Client"
+(def client-menu {:title "Client Management"
                   :links [["/client/register" "Register Client"]
                           ["/client/admin" "Manage Clients"]]})
 
-(def apps-menu  {:title "My Applications" 
+(def apps-menu  {:title "My Authorized Applications" 
                  :links [["/oauth2/user/grants" "Authorized Applications" ]]})
 
 (def admin-menu {:title "Admin"  
@@ -48,7 +48,7 @@
                  [["/admin/user" "Admin/Main"]
                  ]})   
 
-(def test-menu {:title "Test Pages"
+(def test-menu {:title "OAuth Test Pages"
                 :links  [["/test" "Test Page"]]})
 
 ; todo set default class for link items?
