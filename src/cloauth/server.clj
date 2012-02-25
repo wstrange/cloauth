@@ -7,7 +7,7 @@
 
  
 (defn heroku-db
-  "Generate the db map according to Heroku environment when available."
+  "Generate the db param map for the Heroku environment"
   []
   (when (System/getenv "DATABASE_URL")
     (let [url (URI. (System/getenv "DATABASE_URL"))
@@ -20,8 +20,8 @@
          {:user (first (str/split user-info #":"))
           :password (second (str/split user-info #":"))})))))
 
-; Define the DB connect parameters. This should do the right thing
-; for running local vs. running on heroku
+; Define the DB connect parameters. 
+; If we are running on Heroku those db params will override the local settings
 (def db-params
   (merge {:classname "org.postgresql.Driver"
           :subprotocol "postgresql"

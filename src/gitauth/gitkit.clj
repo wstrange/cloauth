@@ -1,9 +1,11 @@
 (ns gitauth.gitkit
+  "Integration with Google Identity Toolkit"
   (:use noir.core
         hiccup.core
         hiccup.page-helpers)
    (:require 
-            [cheshire.core :as json]))
+            [cheshire.core :as json]
+            [cloauth.models.kdb :as db]))
 
 
 ; Get our google API key stored on disk or in an environment var (heroku)
@@ -11,7 +13,7 @@
   (or (System/getenv "GOOGLE_API_KEY")
     (slurp "api-key")))
 
-; todo: find out a better way of doing this..
+; todo: find a better way of doing this..
 (def deploy-url
   (if (System/getenv "GOOGLE_API_KEY")
     "http://cloauth.herokuapp.com"
@@ -19,8 +21,8 @@
     "http://localhost:8080"))
     
 ;; Google Git parameters for this app
-;; You can figure these out by going to your google api console and having it generate 
-;; the Javascript login widget code
+;; You obtain these from your google api console
+;; Have it generate the Javascript login widget code for you
 (def gitkit-params {:developerKey apikey
                     :companyName "Noir Test"
                     :callbackUrl (str deploy-url "/authn/callback")
@@ -38,9 +40,20 @@
 ; git params as JSON
 (def git-params-json (json/generate-string gitkit-params))
 
-
-; Define scripts that are needed by GIT. See the GIT docs
-; The script generates a Sign In button that is inserted in the "chooser" div
-(def javascripts {:git-load (javascript-tag " google.load('identitytoolkit', '1', {packages: ['ac']});")
-                  :git-init (javascript-tag (str "$(function(){window.google.identitytoolkit.setConfig(" 
-                       git-params-json ");$('#chooser').accountChooser();});"))})
+; Generates the Javascript to load GIT toolkit and render the sign in button
+; For this app we use the id=chooser for the button location
+(defpartial generate-git-javascript []
+  (javascript-tag (str "
+google.load('identitytoolkit', '1', {packages: ['ac']});
+$(function(){ 
+window.google.identitytoolkit.setConfig("
+git-params-json 
+");
+$('#chooser').accountChooser();
+"
+; If the user is logged in this will modify the rendered button to show their username
+(if-let [u (db/current-userName)] 
+  (str "window.google.identitytoolkit.showSavedAccount('" u "');" )
+  "")
+"});")))
+  

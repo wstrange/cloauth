@@ -19,20 +19,25 @@
                :jsapi (include-js "https://ajax.googleapis.com/jsapi")
                ; bootstrap javascript
                :bootstrap-js (include-js "/js/bootstrap.js")
-               ; bit of script code to enable various bootstrap 2.0 javascript stuff
+               ; bit of script to enable various bootstrap 2.0 javascript stuff
                :bootstrap-js-init (javascript-tag "$(document).ready(function () { 
                                $('.alert-message').alert();  });")
               })
 
+; css and js includes that every page will need
+; For now this is the same as the above list!
+(def base-includes [:bootstrap :bootstrap-responsive :jquery :jquery-ui 
+                    :bootstrap-js :bootstrap-js-init :jsapi :google-apis])
+
 ; create the page <head>
-(defpartial build-head [incls scripts]
+(defpartial build-head [static-includes]
             [:head
              [:meta {:charset "utf-8"}]
              [:title "Cloauth"]
-             (map #(get includes %) incls)
-             (map #(get gitkit/javascripts %) scripts) 
+             (map #(get includes %) static-includes)
+             (gitkit/generate-git-javascript)
               [:style {:type "text/css"}  "body { padding-top: 60px;}  
-.sidebar-nav { padding: 9px 0;}"]
+.sidebar-nav { padding: 9px 0;}"]        
              ])
 ; "Menu" data structure :title  :check (optional fn to call to see if the menu should be rendered) :links 
 (def client-menu {:title "Client Management"
@@ -59,7 +64,6 @@
   (for [[url text] links] 
     [:li (link-to url text )]))
 
-
 ; If a menu has a check function defined call it.
 ; If the fn returns true we render the menu, else nil 
 ; This is used to include/exclude menus based on some criteria (role, for example)
@@ -80,40 +84,23 @@
     (render-menu apps-menu)]])
 
 
-;; Display the user name or a login link if the user has not logged in
-; The chooser div will get a GIT Sign in Button inserted via Javascript
-(defpartial logged-in-status [] 
-  (let [u (db/current-userName)]
-  (if u  ; If user logged in?
-    [:span (link-to "/user/profile" u) " -" (link-to "/authn/logout" "Logout")]
-    [:div#chooser "Login"])))
-
 ; Top mast header
+; The GIT toolkit will render a sign in button in the chooser div 
+; See gitkit.clj
 (defpartial topmast-content []
        [:div.navbar.navbar-fixed-top 
          [:div.navbar-inner
           [:div.container-fluid
            [:a.brand {:href "/"} "CloAuth"]
-           [:p.pull-right.navbar-text  (logged-in-status)]
+           [:p.pull-right.navbar-text [:div#chooser "Account Chooser"] ]
            ]]])
 
-; css and js includes that every page will need
-(def base-includes [:bootstrap :bootstrap-responsive :jquery :jquery-ui :bootstrap-js :bootstrap-js-init])
-
-; Output the header. If the user is not logged in also include the 
-; google GIT javascript which renders the login popup and button
-(defn header []
-  (if (db/logged-in?)
-    (build-head base-includes [] )
-    (build-head (into base-includes [:jsapi :google-apis]) [:git-load :git-init])))
-
-;; Layouts
 
 ; Layout with an include map for optional css / js
 (defpartial layout-with-includes [ {:keys [css js]} & content]
   ;(prn "option map " css js "content " content)
   (html5 {:lang "en"}
-        (header)
+        (build-head base-includes)
             [:body
              (topmast-content)
               [:div.container-fluid 

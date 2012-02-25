@@ -12,6 +12,7 @@
          (common/layout
            [:h3 "OAuth AZ Server"]          
            [:p "This is an experimental OAuth provider written in Clojure"]
+         
            (if-let [user (db/current-userName) ]
              [:div 
               [:p "Welcome " user ]
